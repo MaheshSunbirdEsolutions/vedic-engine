@@ -1,0 +1,27 @@
+{
+  "_how_to": "Copy to tests/fixtures/<name>.json. Fill 'expected' from Jagannatha Hora (Lahiri ayanamsa, mean node, same birth data). Longitudes are sidereal degrees 0-360 (e.g. Leo 21°11'47\" = 120 + 21.1964 = 141.1964).",
+  "birth": {
+    "datetime_local": "1990-05-14T06:30:00",
+    "tz": "Asia/Kolkata",
+    "lat": 28.6139,
+    "lon": 77.2090
+  },
+  "tolerance_arcmin": 1.0,
+  "tolerance_days": 2,
+  "expected": {
+    "longitudes": {
+      "Lagna": 0.0,
+      "Sun": 0.0,
+      "Moon": 0.0,
+      "Mars": 0.0,
+      "Mercury": 0.0,
+      "Jupiter": 0.0,
+      "Venus": 0.0,
+      "Saturn": 0.0,
+      "Rahu": 0.0
+    },
+    "mahadasha_start": {
+      "Jupiter": "2001-01-01"
+    }
+  }
+}

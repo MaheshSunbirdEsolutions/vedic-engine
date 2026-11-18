@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ccircle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23c2571a%22/%3E%3C/svg%3E">
+<title>Jyotish Lab — Vedic Engine</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#ffffff; --ink:#2b2420; --muted:#7a6f66; --line:#e8e0d6;
+    --accent:#c2571a; --accent-soft:#fbeadf; --good:#2f7d4f; --good-soft:#e3f2e8;
+    --bad:#b23b3b; --bad-soft:#f8e3e3; --mixed:#9a6b00; --mixed-soft:#fbf0d6;
+    --radius:12px; --shadow:0 1px 3px rgba(60,40,20,.08),0 4px 16px rgba(60,40,20,.05);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari","Nirmala UI",Mangal,sans-serif;background:var(--bg);color:var(--ink)}
+  header{display:flex;align-items:center;gap:12px;padding:14px 24px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  header h1{font-size:18px;margin:0;font-weight:650;letter-spacing:.2px}
+  header .om{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:18px}
+  header .sub{color:var(--muted);font-size:13px}
+  main{display:grid;grid-template-columns:340px 1fr;gap:20px;padding:20px 24px;max-width:1500px;margin:0 auto}
+  @media (max-width:980px){main{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+  .card h2{font-size:15px;margin:0 0 12px;font-weight:650}
+  .card h3{font-size:14px;margin:16px 0 8px;font-weight:650}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 4px;font-weight:550}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+  input:focus,select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  button{font:inherit;border:0;border-radius:8px;padding:10px 14px;cursor:pointer}
+  .primary{background:var(--accent);color:#fff;font-weight:600;width:100%;margin-top:14px}
+  .primary:hover{filter:brightness(1.05)}
+  .ghost{background:transparent;color:var(--accent);padding:6px 8px}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;background:var(--accent-soft);color:var(--accent);margin:2px 4px 2px 0}
+  .chip.good{background:var(--good-soft);color:var(--good)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+  .chip.mixed{background:var(--mixed-soft);color:var(--mixed)} .chip.gray{background:#f0ece6;color:var(--muted)}
+  .place-wrap{position:relative}
+  .suggest{position:absolute;left:0;right:0;top:100%;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);z-index:10;max-height:260px;overflow:auto;display:none}
+  .suggest div{padding:8px 10px;cursor:pointer;font-size:14px}
+  .suggest div:hover,.suggest div.active{background:var(--accent-soft)}
+  .suggest small{color:var(--muted)}
+  .placeinfo{font-size:12px;color:var(--muted);margin-top:4px}
+  details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:12px}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);margin-bottom:16px}
+  .tabs button{background:none;border-radius:8px 8px 0 0;padding:10px 14px;color:var(--muted);font-weight:550;border-bottom:2px solid transparent}
+  .tabs button.on{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab{display:none} .tab.on{display:block}
+  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+  .chartbox{text-align:center}
+  .chartbox .cap{font-size:13px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  svg.kundli{width:100%;max-width:420px;height:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:12.5px;padding:8px;border-bottom:1px solid var(--line)}
+  td{padding:8px;border-bottom:1px solid #f1ebe4;vertical-align:top}
+  tr.cur td{background:var(--accent-soft)}
+  .dasha-row{cursor:pointer} .dasha-row:hover td{background:#fbf6f0}
+  .lvl2 td:first-child{padding-left:28px} .lvl3 td:first-child{padding-left:52px;color:var(--muted)}
+  .summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 14px;min-width:120px}
+  .stat b{display:block;font-size:16px} .stat span{font-size:12px;color:var(--muted)}
+  .finding{border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fff}
+  .finding.benefic{border-left-color:var(--good)} .finding.challenging{border-left-color:var(--bad)} .finding.mixed{border-left-color:var(--mixed)}
+  .finding h4{margin:0 0 4px;font-size:15px} .finding p{margin:4px 0} .finding .src{font-size:12px;color:var(--muted)}
+  .empty{color:var(--muted);text-align:center;padding:40px 10px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px} @media (max-width:800px){.grid2{grid-template-columns:1fr}}
+  .big{font-size:40px;font-weight:700;color:var(--accent)}
+  .err{background:var(--bad-soft);color:var(--bad);padding:10px 12px;border-radius:8px;margin-top:10px;font-size:14px;display:none}
+  .profiles{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+  .profiles .p{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:4px 0}
+  .profiles .p a{color:var(--ink);cursor:pointer;text-decoration:none} .profiles .p a:hover{color:var(--accent)}
+  .note{font-size:12.5px;color:var(--muted)}
+  .loading{opacity:.5;pointer-events:none}
+  .subtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .subtabs button{background:#f4eee7;color:var(--ink);padding:7px 12px;font-weight:550;font-size:14px}
+  .subtabs button.on{background:var(--accent);color:#fff}
+  .rep h2{font-size:18px;margin:18px 0 8px} .rep h3{margin-top:18px}
+  .issue{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px;background:#fff}
+  .issue .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .issue .rank{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700}
+  .rem{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;margin-top:10px}
+  .rem .box{background:#fbf7f1;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px}
+  .rem .box h5{margin:0 0 6px;font-size:13px;color:var(--accent)}
+  .rem ul{margin:4px 0 0;padding-left:18px}
+  .mini{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+  .bar{height:8px;border-radius:4px;background:#efe7dd;overflow:hidden} .bar>i{display:block;height:100%;background:var(--accent)}
+  @media print{
+    header,aside,#tabs,.subtabs,.noprint{display:none!important}
+    main{display:block;padding:0} section.card{border:0;box-shadow:none;padding:0}
+    .tab{display:none!important} #tab-reports{display:block!important}
+    .issue,.finding,.box{break-inside:avoid}
+    body{background:#fff}
+  }
+  .lang{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+  .lang button{padding:6px 14px;border-radius:0;background:#fff;color:var(--muted);font-weight:600}
+  .lang button.on{background:var(--accent);color:#fff}
+</style>
+</head>
+<body>
+<header>
+  <div class="om">ॐ</div>
+  <div><h1>Jyotish Lab</h1><div class="sub" data-i18n="app_sub">Vedic Engine · local test console</div></div>
+  <div class="lang" id="lang"><button data-l="en">English</button><button data-l="hi">हिन्दी</button></div>
+</header>
+
+<main>
+  <!-- ============ Birth form ============ -->
+  <aside>
+    <div class="card" id="birthCard">
+      <h2 data-i18n="birth_details">Birth details</h2>
+      <label data-i18n="name">Name</label>
+      <input id="name" data-i18n-ph="name_ph" placeholder="e.g. Test chart 1">
+      <div class="row">
+        <div><label data-i18n="dob">Date of birth</label><input id="dob" type="date" required></div>
+        <div><label data-i18n="tob">Time (local)</label><input id="tob" type="time" step="1" required></div>
+      </div>
+      <label data-i18n="pob">Place of birth</label>
+      <div class="place-wrap" data-place="birth">
+        <input class="place-input" data-i18n-ph="place_ph" placeholder="Start typing a city…" autocomplete="off">
+        <div class="suggest"></div>
+        <div class="placeinfo"></div>
+      </div>
+      <details>
+        <summary data-i18n="advanced">Advanced: coordinates & settings</summary>
+        <div class="row3">
+          <div><label data-i18n="latitude">Latitude</label><input id="lat" type="number" step="0.0001"></div>
+          <div><label data-i18n="longitude">Longitude</label><input id="lon" type="number" step="0.0001"></div>
+          <div><label data-i18n="timezone">Time zone</label><input id="tz" placeholder="Asia/Kolkata"></div>
+        </div>
+        <div class="row">
+          <div><label data-i18n="ayanamsa">Ayanamsa</label>
+            <select id="ayanamsa"><option value="lahiri">Lahiri</option><option value="raman">Raman</option>
+              <option value="krishnamurti">Krishnamurti (KP)</option><option value="true_chitra">True Chitra</option></select></div>
+          <div><label data-i18n="node">Rahu/Ketu</label>
+            <select id="node"><option value="mean" data-i18n="mean_node">Mean node</option><option value="true" data-i18n="true_node">True node</option></select></div>
+        </div>
+      </details>
+      <button class="primary" id="go" data-i18n="generate">Generate kundli</button>
+      <div class="err" id="err"></div>
+      <div class="profiles" id="profiles"></div>
+    </div>
+  </aside>
+
+  <!-- ============ Results ============ -->
+  <section class="card">
+    <div class="tabs" id="tabs">
+      <button data-tab="chart" class="on" data-i18n="tab_chart">Chart</button>
+      <button data-tab="dasha" data-i18n="tab_dasha">Dasha</button>
+      <button data-tab="interp" data-i18n="tab_interp">Interpretation</button>
+      <button data-tab="sade" data-i18n="tab_sade">Sade Sati</button>
+      <button data-tab="panchang" data-i18n="tab_panchang">Panchang</button>
+      <button data-tab="match" data-i18n="tab_match">Matching</button>
+      <button data-tab="reports" data-i18n="tab_reports">Reports</button>
+      <button data-tab="raw" data-i18n="tab_raw">Raw JSON</button>
+    </div>
+
+    <div class="tab on" id="tab-chart"><div class="empty" data-i18n="empty_start">Enter birth details and click <b>Generate kundli</b>.</div></div>
+    <div class="tab" id="tab-dasha"><div class="empty" data-i18n="no_chart">No chart yet.</div></div>
+    <div class="tab" id="tab-interp"><div class="empty" data-i18n="no_chart">No chart yet.</div></div>
+    <div class="tab" id="tab-sade"><div class="empty" data-i18n="no_chart">No chart yet.</div></div>
+
+    <div class="tab" id="tab-panchang">
+      <div class="row" style="max-width:640px">
+        <div><label data-i18n="date">Date</label><input id="pdate" type="date"></div>
+        <div><label data-i18n="place">Place</label>
+          <div class="place-wrap" data-place="panchang">
+            <input class="place-input" data-i18n-ph="city_ph" placeholder="City…" autocomplete="off"><div class="suggest"></div><div class="placeinfo"></div>
+          </div></div>
+      </div>
+      <button class="primary" style="max-width:640px" id="pgo" data-i18n="show_panchang">Show panchang</button>
+      <div id="pout" style="margin-top:18px"></div>
+    </div>
+
+    <div class="tab" id="tab-match">
+      <div class="grid2">
+        <div class="card"><h2 data-i18n="groom">Groom</h2>
+          <div class="row"><div><label data-i18n="date">Date</label><input id="g_dob" type="date"></div><div><label data-i18n="time">Time</label><input id="g_tob" type="time" step="1"></div></div>
+          <label data-i18n="place">Place</label><div class="place-wrap" data-place="groom"><input class="place-input" autocomplete="off" data-i18n-ph="city_ph" placeholder="City…"><div class="suggest"></div><div class="placeinfo"></div></div>
+          <button class="ghost" id="g_use" data-i18n="use_current">Use current chart</button>
+        </div>
+        <div class="card"><h2 data-i18n="bride">Bride</h2>
+          <div class="row"><div><label data-i18n="date">Date</label><input id="b_dob" type="date"></div><div><label data-i18n="time">Time</label><input id="b_tob" type="time" step="1"></div></div>
+          <label data-i18n="place">Place</label><div class="place-wrap" data-place="bride"><input class="place-input" autocomplete="off" data-i18n-ph="city_ph" placeholder="City…"><div class="suggest"></div><div class="placeinfo"></div></div>
+          <button class="ghost" id="b_use" data-i18n="use_current">Use current chart</button>
+        </div>
+      </div>
+      <button class="primary" style="max-width:320px" id="mgo" data-i18n="match_btn">Match kundlis</button>
+      <div id="mout" style="margin-top:18px"></div>
+    </div>
+
+    <div class="tab" id="tab-reports">
+      <div class="subtabs" id="subtabs">
+        <button data-rep="issues" data-i18n="rep_issues">Current issues & remedies</button>
+        <button data-rep="wrong" data-i18n="rep_wrong">What's wrong</button>
+        <button data-rep="full" data-i18n="rep_full">Full Kundli</button>
+        <button data-rep="life" data-i18n="rep_life">Life areas</button>
+        <button data-rep="varsh" data-i18n="rep_varsh">Varshphal</button>
+        <button data-rep="lk" data-i18n="rep_lk">Lal Kitab</button>
+        <button data-rep="bhrigu" data-i18n="rep_bhrigu">Bhrigu Samhita</button>
+      </div>
+      <div class="noprint" style="display:flex;gap:10px;align-items:end;margin-bottom:10px">
+        <div style="max-width:140px"><label data-i18n="year">Year</label><input id="repyear" type="number" min="1900" max="2100"></div>
+        <button class="ghost" onclick="window.print()" data-i18n="print">Print / Save as PDF</button>
+      </div>
+      <div id="repout" class="rep"><div class="empty" data-i18n="need_chart">Generate a kundli first, then choose a report.</div></div>
+    </div>
+
+    <div class="tab" id="tab-raw"><pre id="raw" style="font-size:12px;white-space:pre-wrap;max-height:75vh;overflow:auto">No data yet.</pre></div>
+  </section>
+</main>
+
+<script>
+const SIGNS = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
+const ABBR_EN = {Sun:"Su",Moon:"Mo",Mars:"Ma",Mercury:"Me",Jupiter:"Ju",Venus:"Ve",Saturn:"Sa",Rahu:"Ra",Ketu:"Ke"};
+const places = {};   // key -> {name,country,lat,lon,tz}
+let last = null, lastPanchang = null, lastMatch = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ---------- i18n ----------
+const kv = {get(k,d){ try { return localStorage.getItem(k) ?? d; } catch { return d; } }, set(k,v){ try { localStorage.setItem(k,v); } catch {} }};
+let LANG = kv.get("jyotish_lang","en");
+let I18N = {ui:{}, terms:{}, abbr:{}};
+const t = k => I18N.ui[k] ?? k;                                  // UI string
+const T = v => (v == null ? v : (LANG === "en" ? v : (I18N.terms[v] ?? v)));  // Jyotish term
+const abbr = p => (LANG === "en" ? ABBR_EN[p] : (I18N.abbr[p] || ABBR_EN[p]));
+const retroMark = () => LANG === "en" ? "ᴿ" : "(व)";
+const locale = () => LANG === "hi" ? "hi-IN" : "en-GB";
+
+async function setLang(l){
+  I18N = await api(`/i18n/${l}`); LANG = l; kv.set("jyotish_lang", l);
+  document.documentElement.lang = l;
+  document.querySelectorAll("[data-i18n]").forEach(el => el.innerHTML = t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  document.querySelectorAll("#lang button").forEach(b => b.classList.toggle("on", b.dataset.l === l));
+  renderProfiles();
+  if(last){
+    try { last.interp = await api("/interpret", {...last.input, lang: LANG}); } catch {}
+    renderAll();
+  }
+  if(lastPanchang) renderPanchang(lastPanchang);
+  if(lastMatch) renderMatch(lastMatch);
+}
+$("#lang").addEventListener("click", e => { const b = e.target.closest("button"); if(b) setLang(b.dataset.l); });
+
+// ---------- API ----------
+async function api(path, body){
+  const r = await fetch(path, body ? {method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)} : {});
+  if(!r.ok){ let x = await r.text(); try{ x = JSON.stringify(JSON.parse(x).detail) }catch{}; throw new Error(`${path}: ${x}`); }
+  return r.json();
+}
+
+// ---------- place autocomplete ----------
+function setPlace(key, p){
+  places[key] = p;
+  const w = document.querySelector(`.place-wrap[data-place="${key}"]`);
+  w.querySelector(".place-input").value = p.country ? `${p.name}, ${p.country}` : p.name;
+  w.querySelector(".placeinfo").textContent = `${(+p.lat).toFixed(4)}°, ${(+p.lon).toFixed(4)}° · ${p.tz}`;
+  if(key === "birth"){ $("#lat").value = p.lat; $("#lon").value = p.lon; $("#tz").value = p.tz; }
+}
+document.querySelectorAll(".place-wrap").forEach(w => {
+  const key = w.dataset.place, inp = w.querySelector(".place-input"), box = w.querySelector(".suggest");
+  let timer, items = [], idx = -1;
+  const render = () => {
+    box.innerHTML = items.map((p,i)=>`<div class="${i===idx?'active':''}" data-i="${i}">${esc(p.name)} <small>${esc(p.country)} · ${esc(p.tz)}</small></div>`).join("");
+    box.style.display = items.length ? "block" : "none";
+  };
+  inp.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      if(inp.value.trim().length < 2){ items=[]; render(); return; }
+      items = await api(`/places?q=${encodeURIComponent(inp.value.split(",")[0])}`); idx = -1; render();
+    }, 180);
+  });
+  inp.addEventListener("keydown", e => {
+    if(!items.length) return;
+    if(e.key==="ArrowDown"){ idx=Math.min(idx+1,items.length-1); render(); e.preventDefault(); }
+    if(e.key==="ArrowUp"){ idx=Math.max(idx-1,0); render(); e.preventDefault(); }
+    if(e.key==="Enter" && idx>=0){ setPlace(key, items[idx]); items=[]; render(); e.preventDefault(); }
+  });
+  box.addEventListener("mousedown", e => { const d = e.target.closest("[data-i]"); if(d){ setPlace(key, items[+d.dataset.i]); items=[]; render(); }});
+  inp.addEventListener("blur", () => setTimeout(()=>{ items=[]; render(); }, 150));
+});
+
+// ---------- tabs ----------
+$("#tabs").addEventListener("click", e => {
+  const b = e.target.closest("button"); if(!b) return;
+  document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x===b));
+  document.querySelectorAll(".tab").forEach(x => x.classList.toggle("on", x.id === "tab-"+b.dataset.tab));
+});
+
+// ---------- kundli drawings ----------
+function planetLabels(planetSigns, retro){
+  const by = {}; for(let i=0;i<12;i++) by[i]=[];
+  for(const [p,s] of Object.entries(planetSigns)) by[s].push(abbr(p) + (retro && retro[p] ? retroMark() : ""));
+  return by;
+}
+function northChart(lagna, by){
+  const H = [
+    [[200,0],[300,100],[200,200],[100,100],[200,95]],  [[0,0],[200,0],[100,100],[100,38]],
+    [[0,0],[100,100],[0,200],[36,104]],                  [[0,200],[100,100],[200,200],[100,300],[100,195]],
+    [[0,200],[100,300],[0,400],[36,302]],                [[0,400],[100,300],[200,400],[100,365]],
+    [[200,400],[100,300],[200,200],[300,300],[200,300]], [[200,400],[300,300],[400,400],[300,365]],
+    [[400,400],[300,300],[400,200],[364,302]],           [[400,200],[300,300],[200,200],[300,100],[300,195]],
+    [[400,200],[300,100],[400,0],[364,104]],             [[400,0],[300,100],[200,0],[300,38]],
+  ];
+  const N = [[200,180],[100,82],[82,104],[180,200],[82,300],[100,322],[200,224],[300,322],[318,300],[220,200],[318,104],[300,82]];
+  let s = `<svg class="kundli" viewBox="-2 -2 404 404" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="400" height="400" fill="#fffdf9" stroke="#c9b9a6" stroke-width="2"/>
+    <path d="M0 0L400 400M400 0L0 400M200 0L400 200L200 400L0 200Z" fill="none" stroke="#c9b9a6" stroke-width="1.5"/>`;
+  H.forEach((h,i) => {
+    const sign = (lagna + i) % 12, a = h[h.length-1], labels = by[sign];
+    s += `<text x="${N[i][0]}" y="${N[i][1]}" font-size="11" fill="#b39a82" text-anchor="middle">${sign+1}</text>`;
+    if(i===0) s += `<text x="200" y="62" font-size="11" fill="#c2571a" text-anchor="middle" font-weight="700">${esc(t("asc"))}</text>`;
+    labels.forEach((x,k) => {
+      const cols = labels.length > 3 ? 2 : 1, col = k % cols, rw = Math.floor(k / cols);
+      const px = a[0] + (cols===2 ? (col ? 18 : -18) : 0), py = a[1] + rw*15 - (Math.ceil(labels.length/cols)-1)*7.5;
+      s += `<text x="${px}" y="${py}" font-size="13" font-weight="600" fill="#2b2420" text-anchor="middle" dominant-baseline="middle">${x}</text>`;
+    });
+  });
+  return s + "</svg>";
+}
+function southChart(lagna, by){
+  const POS = {11:[0,0],0:[1,0],1:[2,0],2:[3,0],3:[3,1],4:[3,2],5:[3,3],6:[2,3],7:[1,3],8:[0,3],9:[0,2],10:[0,1]};
+  let s = `<svg class="kundli" viewBox="-2 -2 404 404" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="400" height="400" fill="#fffdf9" stroke="#c9b9a6" stroke-width="2"/>`;
+  for(const [sign,[c,r]] of Object.entries(POS)){
+    const x=c*100, y=r*100, sg=+sign;
+    const lbl = LANG === "en" ? SIGNS[sg].slice(0,3) : T(SIGNS[sg]);
+    s += `<rect x="${x}" y="${y}" width="100" height="100" fill="${sg===lagna?'#fbeadf':'none'}" stroke="#c9b9a6"/>`;
+    s += `<text x="${x+6}" y="${y+14}" font-size="10.5" fill="#b39a82">${esc(lbl)}</text>`;
+    if(sg===lagna) s += `<text x="${x+94}" y="${y+14}" font-size="10.5" fill="#c2571a" text-anchor="end" font-weight="700">${esc(t("asc"))}</text>`;
+    by[sg].forEach((p,k)=>{ s += `<text x="${x+50+(k%2?22:-22)*(by[sg].length>1)}" y="${y+40+Math.floor(k/2)*17}" font-size="13" font-weight="600" text-anchor="middle">${p}</text>`; });
+  }
+  return s + `<text x="200" y="196" font-size="14" text-anchor="middle" fill="#7a6f66">${esc(t("rashi"))}</text></svg>`;
+}
+
+// ---------- render: chart ----------
+const DIG_CLASS = {exalted:'good',own:'good',moolatrikona:'good',debilitated:'bad',enemy:'bad'};
+function renderChart(c){
+  const retro = Object.fromEntries(Object.entries(c.planets).map(([p,v]) => [p, v.retrograde && !["Rahu","Ketu"].includes(p)]));
+  const d1 = Object.fromEntries(Object.entries(c.planets).map(([p,v]) => [p, v.sign_index-1]));
+  const d9 = Object.fromEntries(Object.entries(c.vargas.D9.planets).map(([p,s]) => [p, SIGNS.indexOf(s)]));
+  const l1 = c.lagna.sign_index-1, l9 = SIGNS.indexOf(c.vargas.D9.lagna);
+  const style = window._style || "north";
+  const draw = (l,b) => style === "north" ? northChart(l,b) : southChart(l,b);
+  const m = c.planets.Moon, dosha = c.doshas;
+  $("#tab-chart").innerHTML = `
+    <div class="summary">
+      <div class="stat"><span>${t("lagna")}</span><b>${T(c.lagna.sign)} ${c.lagna.degree_in_sign}</b></div>
+      <div class="stat"><span>${t("moon_sign")}</span><b>${T(m.sign)}</b></div>
+      <div class="stat"><span>${t("nakshatra")}</span><b>${T(m.nakshatra.name)} · ${t("pada")} ${m.nakshatra.pada}</b></div>
+      <div class="stat"><span>${t("ayanamsa")} (${c.ayanamsa.name})</span><b>${c.ayanamsa.dms}</b></div>
+      <div class="stat"><span>${t("doshas")}</span><b>${dosha.manglik.present?`<span class="chip bad">${t("manglik")}</span>`:''}${dosha.kaal_sarp.present?`<span class="chip bad">${t("kaal_sarp")}</span>`:''}${!dosha.manglik.present&&!dosha.kaal_sarp.present?`<span class="chip good">${t("none")}</span>`:''}</b></div>
+    </div>
+    <div style="margin-bottom:8px"><span class="note">${t("chart_style")}</span>
+      <button class="ghost" onclick="window._style='north';renderChart(last.chart)">${style==='north'?`<b>${t("north")}</b>`:t("north")}</button>
+      <button class="ghost" onclick="window._style='south';renderChart(last.chart)">${style==='south'?`<b>${t("south")}</b>`:t("south")}</button></div>
+    <div class="charts">
+      <div class="chartbox"><div class="cap">${t("d1")}</div>${draw(l1, planetLabels(d1, retro))}</div>
+      <div class="chartbox"><div class="cap">${t("d9")}</div>${draw(l9, planetLabels(d9))}</div>
+    </div>
+    <h3>${t("positions")}</h3>
+    <div style="overflow:auto"><table>
+      <tr><th>${t("graha")}</th><th>${t("sign")}</th><th>${t("degree")}</th><th>${t("nakshatra")}</th><th>${t("nak_lord")}</th><th>${t("house")}</th><th>${t("dignity")}</th><th>D9</th><th>D10</th></tr>
+      <tr><td><b>${T("Lagna")}</b></td><td>${T(c.lagna.sign)}</td><td>${c.lagna.degree_in_sign}</td><td>${T(c.lagna.nakshatra.name)} (${c.lagna.nakshatra.pada})</td><td>${T(c.lagna.nakshatra.lord)}</td><td>1</td><td></td><td>${T(c.lagna.vargas.D9)}</td><td>${T(c.lagna.vargas.D10)}</td></tr>
+      ${Object.entries(c.planets).map(([p,v]) => `<tr><td><b>${T(p)}</b>${retro[p]?` <span class="chip gray">${LANG==='en'?'R':'वक्री'}</span>`:''}</td><td>${T(v.sign)}</td><td>${v.degree_in_sign}</td>
+        <td>${T(v.nakshatra.name)} (${v.nakshatra.pada})</td><td>${T(v.nakshatra.lord)}</td><td>${v.house}</td>
+        <td>${v.dignity==='n/a'?'—':`<span class="chip ${DIG_CLASS[v.dignity]||'gray'}">${T(v.dignity)}</span>`}</td>
+        <td>${T(v.vargas.D9)}</td><td>${T(v.vargas.D10)}</td></tr>`).join("")}
+    </table></div>
+    <h3>${t("houses_title")}</h3>
+    <div style="overflow:auto"><table><tr><th>${t("house")}</th><th>${t("sign")}</th><th>${t("lord")}</th><th>${t("occupants")}</th></tr>
+      ${c.houses.map(h => `<tr><td>${h.house}</td><td>${T(h.sign)}</td><td>${T(h.lord)}</td><td>${h.planets.map(T).join(", ")||'—'}</td></tr>`).join("")}</table></div>`;
+}
+
+// ---------- render: dasha ----------
+const fmtD = s => new Date(s.slice(0,10)).toLocaleDateString(locale(),{day:"2-digit",month:"short",year:"numeric"});
+function isCurrent(p){ const now = new Date(); return new Date(p.start) <= now && now < new Date(p.end); }
+function renderDasha(d){
+  let html = `<div class="summary">
+    <div class="stat"><span>${t("birth_dasha")}</span><b>${T(d.birth_dasha.lord)} · ${d.birth_dasha.balance_years.toFixed(2)} ${t("yrs_left")}</b></div>
+    <div class="stat"><span>${t("running_now")}</span><b>${d.current.map(T).join(" / ")||'—'}</b></div></div>
+    <p class="note">${t("dasha_hint")}</p>
+    <table><tr><th>${t("period")}</th><th>${t("start")}</th><th>${t("end")}</th></tr>`;
+  d.mahadashas.forEach((md,i) => {
+    html += `<tr class="dasha-row lvl1 ${isCurrent(md)?'cur':''}" data-md="${i}"><td><b>${T(md.lord)}</b> ${t("mahadasha")}</td><td>${fmtD(md.start)}</td><td>${fmtD(md.end)}</td></tr>`;
+    md.sub.forEach((ad,j) => {
+      html += `<tr class="dasha-row lvl2 ${isCurrent(ad)?'cur':''}" data-parent="${i}" data-ad="${i}-${j}" style="display:${isCurrent(md)?'':'none'}"><td>${T(md.lord)} – ${T(ad.lord)}</td><td>${fmtD(ad.start)}</td><td>${fmtD(ad.end)}</td></tr>`;
+      (ad.sub||[]).forEach(pd => {
+        html += `<tr class="lvl3 ${isCurrent(pd)?'cur':''}" data-parent2="${i}-${j}" style="display:${isCurrent(ad)?'':'none'}"><td>${T(ad.lord)} – ${T(pd.lord)}</td><td>${fmtD(pd.start)}</td><td>${fmtD(pd.end)}</td></tr>`;
+      });
+    });
+  });
+  $("#tab-dasha").innerHTML = html + "</table>";
+  $("#tab-dasha").onclick = e => {
+    const r = e.target.closest(".dasha-row"); if(!r) return;
+    if(r.dataset.md !== undefined){
+      const rows = document.querySelectorAll(`[data-parent="${r.dataset.md}"]`);
+      const show = rows[0].style.display === "none";
+      rows.forEach(x => x.style.display = show ? "" : "none");
+      if(!show) document.querySelectorAll(`[data-parent2^="${r.dataset.md}-"]`).forEach(x => x.style.display = "none");
+    } else if(r.dataset.ad){
+      document.querySelectorAll(`[data-parent2="${r.dataset.ad}"]`).forEach(x => x.style.display = x.style.display === "none" ? "" : "none");
+    }
+  };
+}
+
+// ---------- render: interpretation ----------
+function tagLabel(x){
+  if(LANG === "en") return x;
+  const cap = x[0].toUpperCase() + x.slice(1);
+  return I18N.terms[cap] ?? I18N.ui[x] ?? x;
+}
+const NAT_CLASS = {benefic:'good',challenging:'bad',mixed:'mixed'};
+function renderInterp(r){
+  let html = `<p class="note">${t("interp_note")}</p>`;
+  for(const cat of ["yoga","dosha","placement"]){
+    const fs = r.findings.filter(f => f.category === cat);
+    html += `<h3>${t("cat_"+cat)} (${fs.length})</h3>`;
+    if(!fs.length){ html += `<p class="note">${t("none_found")}</p>`; continue; }
+    html += fs.map(f => `<div class="finding ${f.nature}"><h4>${esc(f.name)}
+        <span class="chip ${NAT_CLASS[f.nature]||'gray'}">${t(f.nature)}</span>
+        ${f.status==='draft'?`<span class="chip gray">${t("draft")}</span>`:''}</h4>
+      <p>${esc(f.text)}</p>
+      <div class="src">${t("source")}: ${esc(f.source)}${f.planets.length?` · ${t("planets")}: ${f.planets.map(T).join(", ")}`:''}${f.remedy_tags.length?` · ${t("remedy_tags")}: ${f.remedy_tags.map(x=>`<span class="chip">${esc(tagLabel(x))}</span>`).join("")}`:''}</div></div>`).join("");
+  }
+  $("#tab-interp").innerHTML = html;
+}
+
+// ---------- render: sade sati ----------
+function renderSade(s){
+  const n = s.now;
+  const curP = p => new Date(p.start) <= new Date() && (!p.end || new Date() < new Date(p.end));
+  $("#tab-sade").innerHTML = `
+    <div class="summary">
+      <div class="stat"><span>${t("natal_moon")}</span><b>${T(s.moon_sign)}</b></div>
+      <div class="stat"><span>${t("saturn_today")}</span><b>${T(n.saturn_sign)}</b></div>
+      <div class="stat"><span>${t("sade_now")}</span><b>${n.sade_sati?`<span class="chip bad">${t("yes")} · ${T(n.phase)}</span>`:`<span class="chip good">${t("no")}</span>`}</b></div>
+      <div class="stat"><span>${t("dhaiya")}</span><b>${n.dhaiya?`<span class="chip mixed">${T(n.dhaiya)}</span>`:'—'}</b></div>
+    </div>
+    <h3>${t("lifetime_sade")}</h3>
+    <table><tr><th>${t("from")}</th><th>${t("to")}</th><th>${t("phases")}</th></tr>
+    ${s.periods.map(p => `<tr class="${curP(p)?'cur':''}"><td>${fmtD(p.start)}</td><td>${p.end?fmtD(p.end):'—'}</td>
+      <td>${p.phases.map(ph=>`<span class="chip gray">${T(ph.sign)}: ${T(ph.phase)} · ${fmtD(ph.from)}</span>`).join(" ")}</td></tr>`).join("")}</table>
+    <p class="note">${t("sade_note")}</p>`;
+}
+
+// ---------- render: panchang ----------
+function renderPanchang(p){
+  const tm = s => s.slice(11,16) + (s.slice(0,10)!==p.date ? ` (${fmtD(s)})` : "");
+  $("#pout").innerHTML = `
+    <div class="summary">
+      <div class="stat"><span>${t("sunrise")}</span><b>${tm(p.sunrise)}</b></div>
+      <div class="stat"><span>${t("sunset")}</span><b>${tm(p.sunset)}</b></div>
+      <div class="stat"><span>${t("vara")}</span><b>${T(p.vara)}</b></div>
+      <div class="stat"><span>${t("rahu_kaal")}</span><b>${tm(p.rahu_kaal.start)}–${tm(p.rahu_kaal.end)}</b></div>
+    </div>
+    <table><tr><th>${t("limb")}</th><th>${t("at_sunrise")}</th><th>${t("ends")}</th></tr>
+      <tr><td>${t("tithi")}</td><td><b>${T(p.tithi.paksha)} ${T(p.tithi.name)}</b> (${p.tithi.number})</td><td>${tm(p.tithi.ends)}</td></tr>
+      <tr><td>${t("nakshatra")}</td><td><b>${T(p.nakshatra.name)}</b></td><td>${tm(p.nakshatra.ends)}</td></tr>
+      <tr><td>${t("yoga")}</td><td><b>${T(p.yoga.name)}</b></td><td>${tm(p.yoga.ends)}</td></tr>
+      <tr><td>${t("karana")}</td><td><b>${T(p.karana.name)}</b></td><td>${tm(p.karana.ends)}</td></tr></table>
+    <p class="note">${t("panchang_note")} ${p.tz}.</p>`;
+}
+
+// ---------- render: matching ----------
+function renderMatch(m){
+  const ok = m.total >= 18;
+  $("#mout").innerHTML = `
+    <div class="summary">
+      <div class="stat"><span>${t("guna_milan")}</span><div class="big">${m.total}<span style="font-size:18px;color:var(--muted)"> / 36</span></div></div>
+      <div class="stat"><span>${t("verdict")}</span><b><span class="chip ${ok?'good':'bad'}">${t(ok?'acceptable':'below')}</span></b></div>
+      <div class="stat"><span>${t("doshas")}</span><b>${m.doshas.nadi_dosha?`<span class="chip bad">${t("nadi_dosha")}</span>`:''}${m.doshas.bhakoot_dosha?`<span class="chip bad">${t("bhakoot_dosha")}</span>`:''}${!m.doshas.nadi_dosha&&!m.doshas.bhakoot_dosha?`<span class="chip good">${t("none")}</span>`:''}</b></div>
+      <div class="stat"><span>${t("manglik_gb")}</span><b>${t(m.manglik.groom?'yes':'no')} / ${t(m.manglik.bride?'yes':'no')}</b></div>
+    </div>
+    <table><tr><th>${t("koota")}</th><th>${t("groom")}</th><th>${t("bride")}</th><th>${t("score")}</th></tr>
+      ${Object.entries(m.kootas).map(([k,v]) => `<tr><td><b>${LANG==='en'?k.replace('_',' ').replace(/\b\w/g,c=>c.toUpperCase()):T(k)}</b>${v.simplified?` <span class="chip gray">${t("simplified")}</span>`:''}</td><td>${T(v.groom)??'—'}</td><td>${T(v.bride)??'—'}</td><td><b>${v.score}</b> / ${v.max}</td></tr>`).join("")}</table>
+    <p class="note">${t("match_note")}</p>`;
+}
+
+function renderAll(){
+  renderChart(last.chart); renderDasha(last.dasha); renderInterp(last.interp); renderSade(last.sade);
+  $("#raw").textContent = JSON.stringify(last, null, 2);
+}
+
+// ---------- actions ----------
+const settings = () => ({ayanamsa: $("#ayanamsa").value, node: $("#node").value});
+const nowIn = tz => new Date().toLocaleString("sv-SE",{timeZone: tz}).replace(" ","T");
+function birthPayload(){
+  const dob = $("#dob").value, tob = $("#tob").value;
+  const lat = parseFloat($("#lat").value), lon = parseFloat($("#lon").value), tz = $("#tz").value.trim();
+  if(!dob || !tob) throw new Error(t("err_dt"));
+  if(isNaN(lat) || isNaN(lon) || !tz) throw new Error(t("err_place"));
+  return {datetime_local: `${dob}T${tob.length===5?tob+':00':tob}`, tz, lat, lon, settings: settings()};
+}
+
+async function generate(){
+  const errEl = $("#err"); errEl.style.display = "none";
+  let b; try { b = birthPayload(); } catch(e){ errEl.textContent = e.message; errEl.style.display = "block"; return; }
+  document.querySelector("section").classList.add("loading");
+  try{
+    const [chart, dasha, interp, sade] = await Promise.all([
+      api("/chart", b), api("/dasha", {...b, levels:3, at: nowIn(b.tz)}), api("/interpret", {...b, lang: LANG}), api("/sade-sati", b)]);
+    last = {input:b, chart, dasha, interp, sade};
+    renderAll();
+    if(!places.panchang && places.birth) setPlace("panchang", places.birth);
+    saveProfile(b);
+  } catch(e){ errEl.textContent = e.message; errEl.style.display = "block"; }
+  finally{ document.querySelector("section").classList.remove("loading"); }
+}
+$("#go").onclick = generate;
+
+$("#pgo").onclick = async () => {
+  const p = places.panchang || places.birth;
+  if(!p){ $("#pout").innerHTML = `<p class="err" style="display:block">${t("choose_place")}</p>`; return; }
+  try{ lastPanchang = await api("/panchang", {day: $("#pdate").value, tz: p.tz, lat: p.lat, lon: p.lon, settings: settings()}); renderPanchang(lastPanchang); }
+  catch(e){ $("#pout").innerHTML = `<p class="err" style="display:block">${esc(e.message)}</p>`; }
+};
+
+function useCurrent(prefix, key){
+  if(!$("#dob").value || !places.birth) return;
+  $(`#${prefix}_dob`).value = $("#dob").value; $(`#${prefix}_tob`).value = $("#tob").value; setPlace(key, places.birth);
+}
+$("#g_use").onclick = () => useCurrent("g","groom");
+$("#b_use").onclick = () => useCurrent("b","bride");
+$("#mgo").onclick = async () => {
+  const mk = (pre, key) => { const p = places[key], d = $(`#${pre}_dob`).value, tt = $(`#${pre}_tob`).value;
+    if(!p || !d || !tt) throw new Error(t("complete_"+key));
+    return {datetime_local:`${d}T${tt.length===5?tt+':00':tt}`, tz:p.tz, lat:p.lat, lon:p.lon, settings: settings()}; };
+  try{ lastMatch = await api("/match", {groom: mk("g","groom"), bride: mk("b","bride")}); renderMatch(lastMatch); }
+  catch(e){ $("#mout").innerHTML = `<p class="err" style="display:block">${esc(e.message)}</p>`; }
+};
+
+// ---------- saved profiles ----------
+const store = {
+  get(){ try { return JSON.parse(localStorage.getItem("jyotish_profiles")||"[]"); } catch { return []; } },
+  set(v){ try { localStorage.setItem("jyotish_profiles", JSON.stringify(v)); } catch {} }
+};
+function saveProfile(b){
+  const name = $("#name").value.trim() || `${b.datetime_local.replace("T"," ")}`;
+  const list = store.get().filter(p => p.name !== name);
+  list.unshift({name, b, place: places.birth || null}); store.set(list.slice(0,20)); renderProfiles();
+}
+function renderProfiles(){
+  const list = store.get(); const el = $("#profiles");
+  if(!list.length){ el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="note" style="margin-bottom:4px">${t("saved")}</div>` + list.map((p,i) =>
+    `<div class="p"><a data-i="${i}">${esc(p.name)}</a><button class="ghost" data-del="${i}" title="${esc(t("remove"))}">✕</button></div>`).join("");
+}
+$("#profiles").addEventListener("click", e => {
+  const list = store.get();
+  if(e.target.dataset.del !== undefined){ list.splice(+e.target.dataset.del,1); store.set(list); renderProfiles(); return; }
+  const a = e.target.closest("a[data-i]"); if(!a) return;
+  const p = list[+a.dataset.i]; $("#name").value = p.name;
+  const [d,tt] = p.b.datetime_local.split("T"); $("#dob").value = d; $("#tob").value = tt;
+  $("#ayanamsa").value = p.b.settings.ayanamsa; $("#node").value = p.b.settings.node;
+  if(p.place) setPlace("birth", p.place); else { $("#lat").value=p.b.lat; $("#lon").value=p.b.lon; $("#tz").value=p.b.tz; places.birth={name:t("custom_location"),country:"",lat:p.b.lat,lon:p.b.lon,tz:p.b.tz}; }
+  generate();
+});
+
+["#lat","#lon","#tz"].forEach(s => $(s).addEventListener("change", () => {
+  places.birth = {name:t("custom_location"), country:"", lat:parseFloat($("#lat").value), lon:parseFloat($("#lon").value), tz:$("#tz").value.trim()};
+}));
+
+$("#pdate").value = new Date().toISOString().slice(0,10);
+setLang(LANG);
+</script>
+<script src="reports.js"></script>
+</body>
+</html>
