@@ -14,6 +14,7 @@ import json
 import os
 import pathlib
 import re
+import tempfile
 from datetime import datetime
 
 import httpx
@@ -21,7 +22,14 @@ import httpx
 from . import books, doshas, i18n, lalkitab, placements, predictions, remedies, simple
 from .afflictions import analyse as analyse_afflictions, describe as describe_affliction
 
-CONFIG = pathlib.Path(__file__).resolve().parent.parent / "data" / "ai.json"
+
+def _default_config_path() -> pathlib.Path:
+    if os.environ.get("VERCEL"):
+        return pathlib.Path(tempfile.gettempdir()) / "jyotish" / "ai.json"
+    return pathlib.Path(__file__).resolve().parent.parent / "data" / "ai.json"
+
+
+CONFIG = _default_config_path()
 DEFAULT_MODEL = "claude-sonnet-5-5"
 PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
 

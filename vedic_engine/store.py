@@ -9,10 +9,20 @@ import json
 import os
 import pathlib
 import sqlite3
+import tempfile
 import uuid
 from datetime import datetime, timezone
 
-DB_PATH = pathlib.Path(os.environ.get("JYOTISH_DB", pathlib.Path(__file__).resolve().parent.parent / "data" / "kundlis.db"))
+
+def _default_db_path() -> pathlib.Path:
+    if os.environ.get("JYOTISH_DB"):
+        return pathlib.Path(os.environ["JYOTISH_DB"])
+    if os.environ.get("VERCEL"):
+        return pathlib.Path(tempfile.gettempdir()) / "jyotish" / "kundlis.db"
+    return pathlib.Path(__file__).resolve().parent.parent / "data" / "kundlis.db"
+
+
+DB_PATH = _default_db_path()
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS kundlis (
