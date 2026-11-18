@@ -4,7 +4,12 @@
     "engine": {
       "root": ".",
       "framework": "fastapi",
-      "entrypoint": "vedic_engine.api:app"
+      "entrypoint": "vedic_engine.api:app",
+      "functions": {
+        "**/*.py": {
+          "excludeFiles": "{web/**,tests/**,tools/**,sources/**,*.md,*.bat,*.sh}"
+        }
+      }
     },
     "web": {
       "root": "web",
