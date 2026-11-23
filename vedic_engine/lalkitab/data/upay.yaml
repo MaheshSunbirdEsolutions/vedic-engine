@@ -1,0 +1,16 @@
+Sun:
+  7:
+    theme_en: "Sun in the 7th house: family relations, partnership and vitality"
+    theme_hi: "सूर्य सातवें भाव में: पारिवारिक संबंध, साझेदारी और जीवनशक्ति"
+    upay:
+      - en: "Keep a silver coin or brass utensil at home; begin important work with a sip of water."
+        hi: "घर में चांदी का चौकोर टुकड़ा या पीतल का पात्र रखें; कोई भी शुभ कार्य मीठा खाकर और पानी पीकर शुरू करें।"
+    status: "reviewed"
+Moon:
+  4:
+    theme_en: "Moon in the 4th house (Pakka Ghar): peace of mind, mother and domestic happiness"
+    theme_hi: "चन्द्र चौथे भाव में (पक्का घर): मानसिक शांति, माता और घरेलू सुख"
+    upay:
+      - en: "Honor and take blessings from mother; avoid selling milk or donating water at night."
+        hi: "माता के चरण स्पर्श कर आशीर्वाद लें; रात्रि में दूध का विक्रय न करें।"
+    status: "reviewed"

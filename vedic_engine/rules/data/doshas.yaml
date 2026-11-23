@@ -1,0 +1,21 @@
+# Classical Doshas Evaluated by Rules Engine
+
+- id: manglik_dosha
+  name: Manglik (Kuja) Dosha
+  category: dosha
+  nature: challenging
+  when: {flag: {name: manglik}}
+  text: "Mars occupies the 1st, 2nd, 4th, 7th, 8th, or 12th house from the ascendant. Traditionally assessed in marriage compatibility; classical pariharas (cancellations) and matching with a partner who has similar martial intensity mitigate it."
+  source: "Brihat Parashara Hora Shastra – Doshas"
+  status: draft
+  remedy_tags: [manglik, mars]
+
+- id: kaal_sarp_dosha
+  name: Kaal Sarp Dosha
+  category: dosha
+  nature: challenging
+  when: {flag: {name: kaal_sarp}}
+  text: "All seven classical planets are hemmed on one side of the Rahu-Ketu nodal axis. A popular modern astrological concept linked to non-linear progress and sudden turning points; should be judged in the context of the whole chart."
+  source: "Traditional and popular Jyotish literature"
+  status: draft
+  remedy_tags: [kaal_sarp, rahu, ketu]

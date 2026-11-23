@@ -1,0 +1,258 @@
+# 23 Classical Vedic Yogas (Parashari & Phaladeepika)
+
+- id: ruchaka
+  name: Ruchaka Yoga
+  category: yoga
+  nature: benefic
+  when:
+    all:
+      - planet_in_house: {planet: Mars, houses: [1, 4, 7, 10]}
+      - dignity: {planet: Mars, is: [own, exalted]}
+  text: "Mars is strong in an angle (kendra) in its own or exalted sign. Associated with courage, vitality, leadership, and decisive executive capability."
+  source: "Phaladeepika 6.1-4; BPHS 75.1-4"
+  status: draft
+  remedy_tags: [mars]
+
+- id: bhadra
+  name: Bhadra Yoga
+  category: yoga
+  nature: benefic
+  when:
+    all:
+      - planet_in_house: {planet: Mercury, houses: [1, 4, 7, 10]}
+      - dignity: {planet: Mercury, is: [own, exalted]}
+  text: "Mercury is strong in an angle (kendra) in its own or exalted sign. Associated with sharp intellect, eloquence, learning, and commercial acumen."
+  source: "Phaladeepika 6.1-4; BPHS 75.5-8"
+  status: draft
+  remedy_tags: [mercury]
+
+- id: hamsa
+  name: Hamsa Yoga
+  category: yoga
+  nature: benefic
+  when:
+    all:
+      - planet_in_house: {planet: Jupiter, houses: [1, 4, 7, 10]}
+      - dignity: {planet: Jupiter, is: [own, exalted]}
+  text: "Jupiter is strong in an angle (kendra) in its own or exalted sign. Associated with wisdom, ethical conduct, high societal esteem, and a scholarly, mentoring nature."
+  source: "Phaladeepika 6.1-4; BPHS 75.9-11"
+  status: draft
+  remedy_tags: [jupiter]
+
+- id: malavya
+  name: Malavya Yoga
+  category: yoga
+  nature: benefic
+  when:
+    all:
+      - planet_in_house: {planet: Venus, houses: [1, 4, 7, 10]}
+      - dignity: {planet: Venus, is: [own, exalted]}
+  text: "Venus is strong in an angle (kendra) in its own or exalted sign. Associated with comforts, aesthetic refinement, charm, prosperity, and enjoyment of life."
+  source: "Phaladeepika 6.1-4; BPHS 75.12-14"
+  status: draft
+  remedy_tags: [venus]
+
+- id: shasha
+  name: Shasha Yoga
+  category: yoga
+  nature: benefic
+  when:
+    all:
+      - planet_in_house: {planet: Saturn, houses: [1, 4, 7, 10]}
+      - dignity: {planet: Saturn, is: [own, exalted]}
+  text: "Saturn is strong in an angle (kendra) in its own or exalted sign. Associated with discipline, patience, organizational mastery, and enduring authority over groups."
+  source: "Phaladeepika 6.1-4; BPHS 75.15-17"
+  status: draft
+  remedy_tags: [saturn]
+
+- id: gajakesari
+  name: Gajakesari Yoga
+  category: yoga
+  nature: benefic
+  when: {planet_in_house: {planet: Jupiter, houses: [1, 4, 7, 10], from: Moon}}
+  text: "Jupiter is in an angle from the Moon. Traditionally associated with reputation, resilience and a generous, principled outlook."
+  source: "Phaladeepika 6.17; BPHS 36.3-4"
+  status: draft
+  remedy_tags: [jupiter, moon]
+
+- id: sunapha
+  name: Sunapha Yoga
+  category: yoga
+  nature: benefic
+  when:
+    all:
+      - occupied_houses: {houses: [2], from: Moon, ignore: [Sun, Rahu, Ketu]}
+      - empty_houses: {houses: [12], from: Moon, ignore: [Sun, Rahu, Ketu]}
+  text: "Planets other than the Sun occupy the 2nd house from the Moon. Indicates wealth acquired through one's own efforts, good intelligence, and a respectable status."
+  source: "BPHS 36.5-6; Phaladeepika 6.5"
+  status: draft
+  remedy_tags: [moon]
+
+- id: anapha
+  name: Anapha Yoga
+  category: yoga
+  nature: benefic
+  when:
+    all:
+      - occupied_houses: {houses: [12], from: Moon, ignore: [Sun, Rahu, Ketu]}
+      - empty_houses: {houses: [2], from: Moon, ignore: [Sun, Rahu, Ketu]}
+  text: "Planets other than the Sun occupy the 12th house from the Moon. Indicates good health, a pleasant magnetic personality, self-control, and contentment."
+  source: "BPHS 36.7-8; Phaladeepika 6.6"
+  status: draft
+  remedy_tags: [moon]
+
+- id: durudhura
+  name: Durudhura Yoga
+  category: yoga
+  nature: benefic
+  when: {occupied_houses: {houses: [2, 12], from: Moon, ignore: [Sun, Rahu, Ketu]}}
+  text: "Planets other than the Sun flank both the 2nd and 12th houses from the Moon. Indicates abundance of resources, assistance from associates, and balanced comforts in life."
+  source: "BPHS 36.9-10; Phaladeepika 6.7"
+  status: draft
+  remedy_tags: [moon]
+
+- id: kemadruma
+  name: Kemadruma Yoga
+  category: yoga
+  nature: challenging
+  when:
+    all:
+      - empty_houses: {houses: [2, 12], from: Moon, ignore: [Sun, Rahu, Ketu]}
+      - empty_houses: {houses: [1, 4, 7, 10], from: Lagna, ignore: [Sun, Rahu, Ketu]}
+  text: "The Moon has no planets in the 2nd or 12th from it, and angles from the ascendant are devoid of planets. Traditionally associated with periods of feeling unassisted or undergoing solitary struggles; consider this a tendency rather than a fixed destiny."
+  source: "BPHS 36.11-13; Phaladeepika 6.8-10"
+  status: draft
+  remedy_tags: [moon]
+
+- id: adhi
+  name: Adhi Yoga
+  category: yoga
+  nature: benefic
+  when: {planet_in_house: {planet: [Mercury, Jupiter, Venus], houses: [6, 7, 8], from: Moon, count: all}}
+  text: "Natural benefics (Mercury, Jupiter, Venus) sit in the 6th, 7th, or 8th houses from the Moon. Associated with high rank, diplomatic skill, and overcoming opposition with dignity."
+  source: "Phaladeepika 6.18; BPHS 36.14-16"
+  status: draft
+  remedy_tags: [mercury, jupiter, venus, moon]
+
+- id: chandra_mangala
+  name: Chandra-Mangala Yoga
+  category: yoga
+  nature: mixed
+  when: {conjunct: {planets: [Moon, Mars]}}
+  text: "Moon and Mars are conjunct. Gives energetic drive, commercial acumen, and capacity to accumulate earnings, though emotional intensity requires conscious grounding."
+  source: "Phaladeepika 6.38; BPHS 37.1"
+  status: draft
+  remedy_tags: [mars, moon]
+
+- id: budhaditya
+  name: Budhaditya Yoga
+  category: yoga
+  nature: benefic
+  when: {conjunct: {planets: [Sun, Mercury]}}
+  text: "Sun and Mercury are conjunct in the same sign. Confers intellectual agility, communicative ability, and scholarly interests. Very common as Mercury stays close to the Sun."
+  source: "Phaladeepika 6.36; Saravali 31.1"
+  status: draft
+  remedy_tags: [sun, mercury]
+
+- id: amala
+  name: Amala Yoga
+  category: yoga
+  nature: benefic
+  when:
+    any:
+      - planet_in_house: {planet: benefics, houses: [10], from: Lagna}
+      - planet_in_house: {planet: benefics, houses: [10], from: Moon}
+  text: "A natural benefic occupies the 10th house from the Lagna or the Moon. Gives an untarnished reputation, ethical deeds, and enduring honour in professional life."
+  source: "Phaladeepika 6.21; BPHS 36.25"
+  status: draft
+  remedy_tags: [mercury, jupiter, venus]
+
+- id: yogakaraka
+  name: Yogakaraka Planet
+  category: yoga
+  nature: benefic
+  when: {owns_both: {a: [1, 4, 7, 10], b: [5, 9]}}
+  text: "A single planet rules both an angle (kendra) and a trine (trikona) for this ascendant, making it the most auspicious functional benefic in the chart. Its periods are generally productive."
+  source: "BPHS 34.13-16; Phaladeepika 6.32"
+  status: draft
+  remedy_tags: []
+
+- id: raja_yoga_kendra_trikona
+  name: Raja Yoga (Kendra-Trikona Lords)
+  category: yoga
+  nature: benefic
+  when: {lords_associated: {a: [4, 7, 10], b: [1, 5, 9]}}
+  text: "The lord of an angle and the lord of a trine form an association through conjunction, mutual aspect, or sign exchange. Enhances status, authority, and prosperity, particularly in their dashas."
+  source: "BPHS 34.17-20; Phaladeepika 6.33-35"
+  status: draft
+  remedy_tags: []
+
+- id: dhana_yoga
+  name: Dhana Yoga
+  category: yoga
+  nature: benefic
+  when: {lords_associated: {a: [2, 11], b: [1, 5, 9]}}
+  text: "Wealth lords (2nd or 11th) connect with dharma/lakshmi lords (1st, 5th, or 9th). Promotes accumulation of assets and financial prosperity, especially during their operating dashas."
+  source: "BPHS 41.1-6; Phaladeepika 6.39"
+  status: draft
+  remedy_tags: []
+
+- id: harsha
+  name: Harsha Yoga (Viparita Raja Yoga)
+  category: yoga
+  nature: benefic
+  when: {lord_in_house: {lord_of: 6, houses: [6, 8, 12]}}
+  text: "The 6th lord is placed in a dusthana (6th, 8th, or 12th house). Difficulties turn into advantages; gives resilience, freedom from lasting illnesses, and triumph over opponents."
+  source: "Phaladeepika 6.57"
+  status: draft
+  remedy_tags: []
+
+- id: sarala
+  name: Sarala Yoga (Viparita Raja Yoga)
+  category: yoga
+  nature: benefic
+  when: {lord_in_house: {lord_of: 8, houses: [6, 8, 12]}}
+  text: "The 8th lord is placed in a dusthana (6th, 8th, or 12th house). Gives fearlessness, ability to overcome sudden adversities, and longevity."
+  source: "Phaladeepika 6.61"
+  status: draft
+  remedy_tags: []
+
+- id: vimala
+  name: Vimala Yoga (Viparita Raja Yoga)
+  category: yoga
+  nature: benefic
+  when: {lord_in_house: {lord_of: 12, houses: [6, 8, 12]}}
+  text: "The 12th lord is placed in a dusthana (6th, 8th, or 12th house). Imparts prudent spending, independence, noble conduct, and peace of mind."
+  source: "Phaladeepika 6.65"
+  status: draft
+  remedy_tags: []
+
+- id: parivartana
+  name: Parivartana Yoga (Mutual Reception)
+  category: yoga
+  nature: mixed
+  when: {exchange: {}}
+  text: "Two planets occupy each other's signs, intertwining the indications of their respective houses. The outcome depends on whether auspicious or challenging houses are involved."
+  source: "Phaladeepika 6.32; BPHS 38.1-4"
+  status: draft
+  remedy_tags: []
+
+- id: neecha_bhanga
+  name: Neecha Bhanga Raja Yoga
+  category: yoga
+  nature: benefic
+  when: {neecha_bhanga: {}}
+  text: "A debilitated planet has its debility cancelled by its dispositor or exaltation lord in an angle from the Lagna or Moon. Initial struggles in its domains convert into notable achievements over time."
+  source: "Phaladeepika 6.26-30; BPHS 39.1-5"
+  status: draft
+  remedy_tags: []
+
+- id: vargottama
+  name: Vargottama Planet
+  category: yoga
+  nature: benefic
+  when: {vargottama: {planet: all}}
+  text: "A planet occupies the same sign in both the natal rashi (D1) and navamsha (D9) charts. This fortifies the planet, ensuring its results are stable and resilient."
+  source: "BPHS 3.52; Phaladeepika 3.11"
+  status: draft
+  remedy_tags: []

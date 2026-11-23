@@ -1,0 +1,132 @@
+rules:
+  - en: "Lal Kitab remedies are symbolic precautions and offerings, not rituals. Perform them in daytime between sunrise and sunset unless specified otherwise."
+    hi: "लाल किताब के उपाय प्रतीकात्मक सावधानियाँ और दान हैं। इन्हें विशेष निर्देश न होने पर दिन के समय (सूर्योदय से सूर्यास्त के बीच) ही करें।"
+    page: 43
+  - en: "Do not perform multiple major remedies simultaneously; maintain consistency with one remedy for the prescribed duration (e.g. 40 or 43 days)."
+    hi: "एक साथ कई बड़े उपाय न करें; निर्धारित अवधि (जैसे 40 या 43 दिन) तक नियमित रूप से एक ही उपाय का पालन करें।"
+    page: 45
+quick:
+  Jupiter:
+    en: "Apply saffron or turmeric tilak on the forehead and navel."
+    hi: "माथे और नाभि पर केसर या हल्दी का तिलक लगाएँ।"
+  Sun:
+    en: "Offer plain fresh water to the rising Sun in a copper vessel."
+    hi: "तांबे के लोटे से उगते सूर्य को सादा जल अर्पित करें।"
+  Moon:
+    en: "Drink water in a silver cup; seek daily blessings from your mother."
+    hi: "चांदी के गिलास में पानी पिएँ; माता के चरण स्पर्श कर आशीर्वाद लें।"
+  Venus:
+    en: "Keep clothes clean and fragrant; feed cows with white sweet food or green fodder."
+    hi: "वस्त्र स्वच्छ व सुगंधित रखें; गाय को हरा चारा या सफेद मिष्ठान्न खिलाएँ।"
+  Mars:
+    en: "Distribute sweet revadi, jaggery or batashas to brothers or friends."
+    hi: "भाइयों या मित्रों को गुड़, बताशे या मीठी रेवड़ी खिलाएँ।"
+  Mars_bad:
+    en: "Float sweet batashas or revadi in flowing river water."
+    hi: "बहते जल में मीठी रेवड़ी या बताशे प्रवाहित करें।"
+  Mercury:
+    en: "Donate green moong dal or feed spinach to green birds/cows."
+    hi: "साबुत हरी मूंग का दान करें या पक्षियों/गौ माता को पालक खिलाएँ।"
+  Saturn:
+    en: "Feed black dogs or crows with mustard-oil-applied roti."
+    hi: "काले कुत्ते या कौवे को सरसों का तेल लगी रोटी खिलाएँ।"
+  Rahu:
+    en: "Float raw coconut or barley washed in milk into running water."
+    hi: "दूध से धुले जौ या कच्चा नारियल बहते पानी में प्रवाहित करें।"
+  Ketu:
+    en: "Feed bread or biscuits to stray dogs; donate a two-colored blanket."
+    hi: "आवारा कुत्तों को रोटी या बिस्कुट दें; दोरंगा (काला-सफेद) कंबल दान करें।"
+planet:
+  Jupiter:
+    en: "Jupiter represents elders, wisdom, teachers and dharma."
+    hi: "गुरु बुजुर्गों, ज्ञान, गुरु और धर्म का कारक है।"
+    page: 75
+  Sun:
+    en: "Sun represents self-respect, government, father and soul vitality."
+    hi: "सूर्य आत्मसम्मान, राजकृपा, पिता और आत्मबल का कारक है।"
+    page: 101
+  Moon:
+    en: "Moon represents mother, mental peace, liquid cash and emotions."
+    hi: "चन्द्र माता, मानसिक शांति, तरल धन और संवेदना का कारक है।"
+    page: 120
+  Venus:
+    en: "Venus represents marriage, comforts, luxury and artistic sensitivity."
+    hi: "शुक्र विवाह, दांपत्य, सुख-साधन और कलात्मक रुचि का कारक है।"
+    page: 141
+  Mars:
+    en: "Mars represents brothers, courage, land and blood energy."
+    hi: "मंगल भाई, साहस, भूमि और रक्त ऊर्जा का कारक है।"
+    page: 161
+  Mercury:
+    en: "Mercury represents trade, intellect, communication and speech."
+    hi: "बुध व्यापार, बुद्धि, संवाद और वाक्पटुता का कारक है।"
+    page: 179
+  Saturn:
+    en: "Saturn represents service, hard work, discipline and justice."
+    hi: "शनि सेवा, श्रम, अनुशासन और न्याय का कारक है।"
+    page: 201
+  Rahu:
+    en: "Rahu represents sudden events, foreign elements, technology and illusion."
+    hi: "राहु अचानक घटनाएँ, ससुराल, तकनीक और भ्रम का कारक है।"
+    page: 223
+  Ketu:
+    en: "Ketu represents sons, nephew, spirituality, intuition and journeys."
+    hi: "केतु पुत्र, भानजे, आध्यात्मिकता, अंतर्ज्ञान और यात्रा का कारक है।"
+    page: 241
+rin:
+  father:
+    name:
+      en: "Father's Karmic Debt (Pitri Rin)"
+      hi: "पितृ ऋण"
+    sign:
+      en: "Sudden loss of reputation, dental issues, hair fall or elder's suffering"
+      hi: "अचानक मान-हानि, बाल झड़ना, दांतों के कष्ट या बुजुर्गों की परेशानी"
+    when:
+      planets:
+        - "Jupiter"
+        - "Sun"
+      houses:
+        - 2
+        - 5
+        - 9
+        - 12
+    upay:
+      en: "All blood relatives contribute equal gold or yellow coins, donate to a temple."
+      hi: "परिवार के सभी रक्त-संबंधी बराबर धन/पीली धातु एकत्र कर धर्मस्थान में दान करें।"
+    page: 35
+  mother:
+    name:
+      en: "Mother's Karmic Debt (Matri Rin)"
+      hi: "मातृ ऋण"
+    sign:
+      en: "Financial depletion, mental anxiety, health issues to children"
+      hi: "धन की बर्बादी, मानसिक बेचैनी, संतान को कष्ट"
+    when:
+      planets:
+        - "Moon"
+      houses:
+        - 2
+        - 4
+        - 8
+    upay:
+      en: "All blood relatives contribute equal silver, float in running river."
+      hi: "सभी रक्त-संबंधी बराबर चांदी का अंश एकत्र कर बहती नदी में प्रवाहित करें।"
+    page: 35
+  self:
+    name:
+      en: "Self Debt (Swasthya Rin)"
+      hi: "स्वऋण"
+    sign:
+      en: "Lack of recognition despite heavy work, persistent struggles"
+      hi: "कड़े परिश्रम के बाद भी उचित मान न मिलना, लगातार संघर्ष"
+    when:
+      planets:
+        - "Venus"
+      houses:
+        - 2
+        - 7
+        - 8
+    upay:
+      en: "Perform Surya Yagya or feed cows regularly."
+      hi: "सूर्य यज्ञ कराएँ अथवा गौ माता की नित्य सेवा करें।"
+    page: 36

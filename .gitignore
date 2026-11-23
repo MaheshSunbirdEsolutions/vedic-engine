@@ -5,7 +5,7 @@ __pycache__/
 .pytest_cache/
 
 # Personal data: saved kundlis and the AI API key (data/ai.json)
-data/
+/data/
 .env
 
 # Web build output and dependencies

@@ -1,0 +1,333 @@
+Jupiter:
+  1:
+    title_hi: "बृहस्पति खाना नं. 1"
+    book_page: 77
+  2:
+    title_hi: "जगत्‌ का धर्म गुरु और विद्या का स्वामी"
+    book_page: 81
+  3:
+    title_hi: "ज्योतिष व आशीष का स्वामी"
+    book_page: 83
+  4:
+    title_hi: "चनच्र की राजधानी"
+    book_page: 85
+  5:
+    title_hi: "ब्रह्मज्ानी परन्तु आय का बांस, युस्से वाला"
+    book_page: 86
+  6:
+    title_hi: "मुफ्तखोर सगर साथु स्वभाव"
+    book_page: 88
+  7:
+    title_hi: "2 उत्तम ज्ञानी वैद्ययी"
+    book_page: 89
+  8:
+    title_hi: "बृहस्पति खाना नं. 8"
+    book_page: 91
+  9:
+    title_hi: "योगी एवं धन का त्यागी, सनहरों खानदान"
+    book_page: 92
+  10:
+    title_hi: "बृहस्पति खाना नं. 10"
+    book_page: 93
+  11:
+    title_hi: "बृहस्पति खाना नं. 11"
+    book_page: 96
+  12:
+    title_hi: "बृहस्पति खाना नं. 12"
+    book_page: 97
+Sun:
+  1:
+    title_hi: "सूर्य खाना नं. 1"
+    book_page: 105
+  2:
+    title_hi: "सूर्य खाना नं. 2"
+    book_page: 106
+  3:
+    title_hi: "धन का राजा, स्वयं कमा कर खाले वाला"
+    book_page: 107
+  4:
+    title_hi: "दूसरों के लिए जोड़ जोड़ कर मरे"
+    book_page: 108
+  5:
+    title_hi: "परिवार तरक्षी क्रा मालिक"
+    book_page: 110
+  6:
+    title_hi: "घन से बेफ़िक्र, भारय पर सन्तुष्ट"
+    book_page: 111
+  7:
+    title_hi: "कम कबीला डरता डरता मर रहे"
+    book_page: 112
+  8:
+    title_hi: "सूर्य खाना नं. 8"
+    book_page: 115
+  9:
+    title_hi: "लम्बी उप्र, सूर्य ग्रहण के बाद का सूर्य १"
+    book_page: 116
+  10:
+    title_hi: "सूर्य खाना नं. 10"
+    book_page: 117
+  11:
+    title_hi: "सूर्य खाना नं. 11"
+    book_page: 118
+  12:
+    title_hi: "सूर्य खाना नं. 12"
+    book_page: 119
+Moon:
+  1:
+    title_hi: "चन्द्र खाना नं. 1"
+    book_page: 123
+  2:
+    title_hi: "चन्द्र खाना नं. 2"
+    book_page: 125
+  3:
+    title_hi: "चन्द्र खाना नं. 3"
+    book_page: 126
+  4:
+    title_hi: "खर्चने पर और बढ़ने वाली आय की नदी १"
+    book_page: 128
+  5:
+    title_hi: "बच्चों के दूध की माता तथा आत्मिक नदी"
+    book_page: 129
+  6:
+    title_hi: "चन्द्र खाना नं. 6"
+    book_page: 130
+  7:
+    title_hi: "चन्द्र खाना नं. 7"
+    book_page: 131
+  8:
+    title_hi: "चन्द्र खाना नं. 8"
+    book_page: 132
+  9:
+    title_hi: "चन्द्र खाना नं. 9"
+    book_page: 133
+  10:
+    title_hi: "चन्द्र खाना नं. 10"
+    book_page: 134
+  11:
+    title_hi: "चन्द्र खाना नं. 11"
+    book_page: 136
+  12:
+    title_hi: "चन्द्र खाना नं. 12"
+    book_page: 137
+Venus:
+  1:
+    title_hi: "शुक्र खाना नं. 1"
+    book_page: 142
+  2:
+    title_hi: "शुक्र खाना नं. 2"
+    book_page: 144
+  3:
+    title_hi: "शुक्र खाना नं. 3"
+    book_page: 146
+  4:
+    title_hi: "शुक्र खाना नं. 4"
+    book_page: 147
+  5:
+    title_hi: "शुक्र खाना नं. 5"
+    book_page: 148
+  6:
+    title_hi: "शुक्र खाना नं. 6"
+    book_page: 150
+  7:
+    title_hi: "शुक्र खाना नं. 7"
+    book_page: 152
+  8:
+    title_hi: "शुक्र खाना नं. 8"
+    book_page: 154
+  9:
+    title_hi: "मिट्टी काली आंधी - मंगल बद"
+    book_page: 155
+  10:
+    title_hi: "शुक्र खाना नं. 10"
+    book_page: 157
+  11:
+    title_hi: "शुक्र खाना नं. 11"
+    book_page: 158
+  12:
+    title_hi: "शुक्र खाना नं. 12"
+    book_page: 159
+Mars:
+  1:
+    title_hi: "मंगल खाना नं. 1"
+    book_page: 163
+  2:
+    title_hi: "धर्म मूर्ति भईयों की पालना करता हुआ १&"
+    book_page: 164
+  3:
+    title_hi: "मंगल खाना नं. 3"
+    book_page: 165
+  4:
+    title_hi: "मंगल खाना नं. 4"
+    book_page: 166
+  5:
+    title_hi: "मंगल खाना नं. 5"
+    book_page: 169
+  6:
+    title_hi: "मंगल खाना नं. 6"
+    book_page: 170
+  7:
+    title_hi: "मंगल खाना नं. 7"
+    book_page: 172
+  8:
+    title_hi: "सात का फंदा बलि की जयह"
+    book_page: 173
+  9:
+    title_hi: "मंगल खाना नं. 9"
+    book_page: 174
+  10:
+    title_hi: "मंगल खाना नं. 10"
+    book_page: 175
+  11:
+    title_hi: "मंगल खाना नं. 11"
+    book_page: 176
+  12:
+    title_hi: "मंगल खाना नं. 12"
+    book_page: 177
+Mercury:
+  1:
+    title_hi: "बुध खाना नं. 1"
+    book_page: 183
+  2:
+    title_hi: "योगी, राजा] मतलब परत्त ब्रह्मज्ञानी"
+    book_page: 185
+  3:
+    title_hi: "बुध खाना नं. 3"
+    book_page: 186
+  4:
+    title_hi: "बुध खाना नं. 4"
+    book_page: 188
+  5:
+    title_hi: "बुध खाना नं. 5"
+    book_page: 189
+  6:
+    title_hi: "बुध खाना नं. 6"
+    book_page: 190
+  7:
+    title_hi: "बुध खाना नं. 7"
+    book_page: 192
+  8:
+    title_hi: "बुध खाना नं. 8"
+    book_page: 193
+  9:
+    title_hi: "बुध खाना नं. 9"
+    book_page: 194
+  10:
+    title_hi: "बुध खाना नं. 10"
+    book_page: 196
+  11:
+    title_hi: "बुध खाना नं. 11"
+    book_page: 197
+  12:
+    title_hi: "बुध खाना नं. 12"
+    book_page: 198
+Saturn:
+  1:
+    title_hi: "शनि खाना नं. 1"
+    book_page: 204
+  2:
+    title_hi: "शनि खाना नं. 2"
+    book_page: 206
+  3:
+    title_hi: "शनि खाना नं. 3"
+    book_page: 207
+  4:
+    title_hi: "पानी का साँप"
+    book_page: 208
+  5:
+    title_hi: "बच्चे खाने वाला जाप"
+    book_page: 209
+  6:
+    title_hi: "लेख की स्याही एक गृणा मंदा शा"
+    book_page: 211
+  7:
+    title_hi: "कलम विधाता रिजक"
+    book_page: 213
+  8:
+    title_hi: "शनि खाना नं. 8"
+    book_page: 215
+  9:
+    title_hi: "शनि खाना नं. 9"
+    book_page: 216
+  10:
+    title_hi: "शनि खाना नं. 10"
+    book_page: 217
+  11:
+    title_hi: "शनि खाना नं. 11"
+    book_page: 219
+  12:
+    title_hi: "शनि खाना नं. 12"
+    book_page: 221
+Rahu:
+  1:
+    title_hi: "राहु खाना नं. 1"
+    book_page: 224
+  2:
+    title_hi: "राहु खाना नं. 2"
+    book_page: 226
+  3:
+    title_hi: "आयु तथा धन का स्वामी"
+    book_page: 228
+  4:
+    title_hi: "धर्मी मगर धन के आम ग़म"
+    book_page: 229
+  5:
+    title_hi: "राहु खाना नं. 5"
+    book_page: 230
+  6:
+    title_hi: "राहु खाना नं. 6"
+    book_page: 231
+  7:
+    title_hi: "राहु खाना नं. 7"
+    book_page: 232
+  8:
+    title_hi: "राहु खाना नं. 8"
+    book_page: 234
+  9:
+    title_hi: "राहु खाना नं. 9"
+    book_page: 235
+  10:
+    title_hi: "राहु खाना नं. 10"
+    book_page: 236
+  11:
+    title_hi: "राहु खाना नं. 11"
+    book_page: 237
+  12:
+    title_hi: "राहु खाना नं. 12"
+    book_page: 238
+Ketu:
+  1:
+    title_hi: "केतु खाना नं. 1"
+    book_page: 242
+  2:
+    title_hi: "केतु खाना नं. 2"
+    book_page: 243
+  3:
+    title_hi: "केतु खाना नं. 3"
+    book_page: 244
+  4:
+    title_hi: "केतु खाना नं. 4"
+    book_page: 245
+  5:
+    title_hi: "केतु खाना नं. 5"
+    book_page: 246
+  6:
+    title_hi: "केतु खाना नं. 6"
+    book_page: 246
+  7:
+    title_hi: "शेर का मुकाबला करने वाला कुत्ता"
+    book_page: 249
+  8:
+    title_hi: "माँत के यम को पहले देख लेने वाला कुत्ता"
+    book_page: 250
+  9:
+    title_hi: "केतु खाना नं. 9"
+    book_page: 251
+  10:
+    title_hi: "केतु खाना नं. 10"
+    book_page: 253
+  11:
+    title_hi: "केतु खाना नं. 11"
+    book_page: 254
+  12:
+    title_hi: "केतु खाना नं. 12"
+    book_page: 255

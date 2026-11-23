@@ -1,0 +1,121 @@
+# 12 Ascendant Lord (Lagna Lord) Placements (BPHS Chapter 24)
+
+- id: lagna_lord_h1
+  name: Ascendant Lord in 1st House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [1]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 1st house: self-reliant, self-made individual with a strong identity, vital energy and self-confidence."
+  source: "BPHS 24.1; Phaladeepika 16.1"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h2
+  name: Ascendant Lord in 2nd House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [2]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 2nd house: focused on wealth accumulation, family lineage, learning and speech; resourceful through personal effort."
+  source: "BPHS 24.2; Phaladeepika 16.2"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h3
+  name: Ascendant Lord in 3rd House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [3]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 3rd house: courageous, enterprising, and skilled in communication; siblings, initiative and short travels play key roles."
+  source: "BPHS 24.3; Phaladeepika 16.3"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h4
+  name: Ascendant Lord in 4th House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [4]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 4th house: attached to home, mother, property and inner peace; enjoys domestic stability, vehicles and comfortable surroundings."
+  source: "BPHS 24.4; Phaladeepika 16.4"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h5
+  name: Ascendant Lord in 5th House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [5]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 5th house: sharp intellect, creative inclinations and wise discernment; blessed with merits from past deeds and good progeny."
+  source: "BPHS 24.5; Phaladeepika 16.5"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h6
+  name: Ascendant Lord in 6th House
+  category: placement
+  nature: mixed
+  when: {lord_in_house: {lord_of: 1, houses: [6]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 6th house: competitive, resilient and service-oriented; overcomes obstacles and adversaries, though conscious attention to health and debts is advisable."
+  source: "BPHS 24.6; Phaladeepika 16.6"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h7
+  name: Ascendant Lord in 7th House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [7]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 7th house: life strongly oriented toward partnerships, spouse, public relations, trade and extensive travel."
+  source: "BPHS 24.7; Phaladeepika 16.7"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h8
+  name: Ascendant Lord in 8th House
+  category: placement
+  nature: mixed
+  when: {lord_in_house: {lord_of: 1, houses: [8]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 8th house: transformative life path with an affinity for research, deep investigation and esoteric knowledge; requires minding health and sudden fluctuations."
+  source: "BPHS 24.8; Phaladeepika 16.8"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h9
+  name: Ascendant Lord in 9th House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [9]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 9th house: fortunate, ethical and philosophically inclined; supported by mentors, father and righteousness; inclined toward higher wisdom and sacred pilgrimages."
+  source: "BPHS 24.9; Phaladeepika 16.9"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h10
+  name: Ascendant Lord in 10th House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [10]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 10th house: career-driven individual who earns respect, honour, leadership, and public recognition through personal actions."
+  source: "BPHS 24.10; Phaladeepika 16.10"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h11
+  name: Ascendant Lord in 11th House
+  category: placement
+  nature: benefic
+  when: {lord_in_house: {lord_of: 1, houses: [11]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 11th house: steady financial gains, fulfillment of hopes and desires, and an expansive network of supportive elder siblings and influential friends."
+  source: "BPHS 24.11; Phaladeepika 16.11"
+  status: draft
+  remedy_tags: []
+
+- id: lagna_lord_h12
+  name: Ascendant Lord in 12th House
+  category: placement
+  nature: mixed
+  when: {lord_in_house: {lord_of: 1, houses: [12]}}
+  text: "{lagna_lord}, the ascendant lord, is in the 12th house: expenditures and investments, foreign connections or residence, charitable acts, quiet contemplation, and spiritual liberation."
+  source: "BPHS 24.12; Phaladeepika 16.12"
+  status: draft
+  remedy_tags: []
