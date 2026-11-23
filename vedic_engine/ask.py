@@ -272,11 +272,12 @@ def answer_offline(question: str, chart: dict, dasha: dict, life: list[dict], la
         if h_lk:
             try:
                 e = lalkitab.entry(p, h_lk, lang)
-                refs.append({"book": "lalkitab", "title": books.BOOKS["lalkitab"]["title_hi" if hi else "title"],
-                             "pdf_page": e["pdf_pages"][0], "page_label": books.page_label("lalkitab", e["pdf_pages"][0], lang),
-                             "why": L(f"{p} in house {h_lk} (Lal Kitab chart)", f"{T(p)} खाना {h_lk} में (लाल किताब कुंडली)"),
-                             "image": f"/books/lalkitab/p{e['pdf_pages'][0]:03d}.jpg"})
-            except (KeyError, IndexError):
+                if e.get("pdf_pages"):
+                    refs.append({"book": "lalkitab", "title": books.BOOKS["lalkitab"]["title_hi" if hi else "title"],
+                                 "pdf_page": e["pdf_pages"][0], "page_label": books.page_label("lalkitab", e["pdf_pages"][0], lang),
+                                 "why": L(f"{p} in house {h_lk} (Lal Kitab chart)", f"{T(p)} खाना {h_lk} में (लाल किताब कुंडली)"),
+                                 "image": f"/books/lalkitab/p{e['pdf_pages'][0]:03d}.jpg"})
+            except Exception:
                 pass
     try:
         from . import bhrigu

@@ -20,32 +20,44 @@ TITLE_EN_HINT = "Book title of this placement (Hindi, from the table of contents
 
 @functools.lru_cache(maxsize=None)
 def titles() -> dict:
-    return yaml.safe_load((DATA / "titles.yaml").read_text(encoding="utf-8"))
+    try:
+        p = DATA / "titles.yaml"
+        return yaml.safe_load(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except Exception:
+        return {}
 
 
 @functools.lru_cache(maxsize=None)
 def upay_data() -> dict:
-    p = DATA / "upay.yaml"
-    return yaml.safe_load(p.read_text(encoding="utf-8")) if p.exists() else {}
+    try:
+        p = DATA / "upay.yaml"
+        return yaml.safe_load(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except Exception:
+        return {}
 
 
 @functools.lru_cache(maxsize=None)
 def section_pages() -> dict:
     import json
-    return json.loads((DATA / "section_pages.json").read_text(encoding="utf-8"))
+    try:
+        p = DATA / "section_pages.json"
+        return json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    except Exception:
+        return {}
 
 
 def entry(planet: str, house: int, lang: str = "en") -> dict:
-    t = titles()[planet][house]
+    t = titles().get(planet, {}).get(house, {})
     u = upay_data().get(planet, {}).get(house, {})
     hi = lang == "hi"
+    sec = section_pages().get(planet, {}).get(str(house), [])
     return {
-        "planet": planet, "house": house, "title_hi": t["title_hi"], "book_page": t["book_page"],
+        "planet": planet, "house": house, "title_hi": t.get("title_hi", ""), "book_page": t.get("book_page", 0),
         "theme": (u.get("theme_hi") if hi else u.get("theme_en")) or "",
-        "upay": [x["hi" if hi else "en"] for x in u.get("upay", [])],
-        "pakka_ghar": house in PAKKA_GHAR[planet],
+        "upay": [x["hi" if hi else "en"] for x in u.get("upay", []) if isinstance(x, dict) and ("hi" in x or "en" in x)],
+        "pakka_ghar": house in PAKKA_GHAR.get(planet, []),
         "status": u.get("status", "pending" if not u else "draft"),
-        "pdf_pages": section_pages()[planet][str(house)],
+        "pdf_pages": sec,
     }
 
 
@@ -84,7 +96,11 @@ def report(chart: dict, age: int, lang: str = "en") -> dict:
 
 @functools.lru_cache(maxsize=None)
 def general() -> dict:
-    return yaml.safe_load((DATA / "remedies.yaml").read_text(encoding="utf-8"))
+    try:
+        p = DATA / "remedies.yaml"
+        return yaml.safe_load(p.read_text(encoding="utf-8")) if p.exists() else {"rules": [], "quick": {}, "planet": {}, "rin": {}}
+    except Exception:
+        return {"rules": [], "quick": {}, "planet": {}, "rin": {}}
 
 
 def detect_rin(chart: dict, lang: str = "en") -> list[dict]:

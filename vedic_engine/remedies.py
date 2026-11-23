@@ -290,11 +290,14 @@ def full_set(chart: dict, planet: str, lang: str = "en", lk_house: int | None = 
     for kind, h in (("annual", lk_annual_house), ("natal", lk_house if lk_house else pl["house"])):
         if not h:
             continue
-        e = lalkitab.entry(planet, h, lang)
-        for u in e["upay"]:
-            lk_items.append(("(इस वर्ष) " if hi else "(this year) ") + u if kind == "annual" else u)
-        if e["upay"]:
-            lk_src.append(f"p. {e['book_page']}")
+        try:
+            e = lalkitab.entry(planet, h, lang)
+            for u in e.get("upay", []):
+                lk_items.append(("(इस वर्ष) " if hi else "(this year) ") + u if kind == "annual" else u)
+            if e.get("upay"):
+                lk_src.append(f"p. {e.get('book_page')}")
+        except Exception:
+            pass
         if kind == "annual" and lk_annual_house == lk_house:
             break
     q = lalkitab.quick_upay(planet, lang, weak)
