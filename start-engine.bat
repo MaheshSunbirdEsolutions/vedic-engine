@@ -46,6 +46,6 @@ if errorlevel 1 (
 )
 
 echo.
-echo Vedic Engine running at http://127.0.0.1:8000  (keep this window open; close it to stop)
+echo Vedic Engine running at https://vedic-engine-eight.vercel.app/engine  (keep this window open; close it to stop)
 ".venv\Scripts\python.exe" -m uvicorn vedic_engine.api:app --host 127.0.0.1 --port 8000
 pause
