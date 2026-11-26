@@ -8,6 +8,12 @@ export type Kundli = Birth & {
 };
 export type Place = { name: string; country: string; lat: number; lon: number; tz: string; population?: number };
 
+export class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
 export async function api<T = any>(path: string, body?: unknown, method?: string): Promise<T> {
   const r = await fetch(`/engine${path}`, {
     method: method || (body !== undefined ? "POST" : "GET"),
@@ -18,7 +24,7 @@ export async function api<T = any>(path: string, body?: unknown, method?: string
   if (!r.ok) {
     let msg = await r.text();
     try { msg = JSON.stringify(JSON.parse(msg).detail); } catch { /* keep text */ }
-    throw new Error(`${path}: ${r.status} ${msg}`);
+    throw new ApiError(r.status, `${path}: ${r.status} ${msg}`);
   }
   return r.json();
 }

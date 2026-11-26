@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 
 const HOP_BY_HOP_REQUEST_HEADERS = new Set([
@@ -44,6 +45,18 @@ export async function proxyToEngine(req: NextRequest, segments: string[]): Promi
       headers.set(key, value);
     }
   });
+
+  if (!headers.has("authorization")) {
+    try {
+      const { getToken } = await auth();
+      const token = await getToken();
+      if (token) {
+        headers.set("authorization", `Bearer ${token}`);
+      }
+    } catch {
+      // Unauthenticated or public calls proceed without a Bearer token.
+    }
+  }
 
   const hasBody = req.method !== "GET" && req.method !== "HEAD";
   const body = hasBody ? await req.arrayBuffer() : undefined;
