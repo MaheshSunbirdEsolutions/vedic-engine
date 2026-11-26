@@ -1,7 +1,9 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
-import { api, birthOf, type Kundli } from "@/lib/api";
+import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
+import { ApiError, api, birthOf, type Kundli } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import BirthForm from "@/components/BirthForm";
 
@@ -24,13 +26,24 @@ function Person({ title, saved, value, onChange }: { title: string; saved: Kundl
 }
 
 export default function Match() {
-  const { t, T } = useI18n();
+  const { t, T, lang } = useI18n();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const [saved, setSaved] = useState<Kundli[]>([]);
   const [g, setG] = useState<Kundli | null>(null);
   const [b, setB] = useState<Kundli | null>(null);
   const [m, setM] = useState<any>(null);
   const [err, setErr] = useState("");
-  useEffect(() => { api<Kundli[]>("/kundlis").then(setSaved).catch(() => setErr(t("engine_down"))); }, [t]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isSignedIn) { setSaved([]); return; }
+    api<Kundli[]>("/kundlis")
+      .then(setSaved)
+      .catch((e) => {
+        if (!(e instanceof ApiError && e.status === 401)) setErr(t("engine_down"));
+      });
+  }, [isLoaded, isSignedIn, userId, t]);
+
   const run = async () => {
     if (!g) return setErr(t("complete_groom"));
     if (!b) return setErr(t("complete_bride"));
@@ -41,6 +54,13 @@ export default function Match() {
   return (
     <div className="page"><section className="card">
       <h2>{t("tab_match")}</h2>
+      {isLoaded && !isSignedIn && (
+        <p className="note" style={{ marginBottom: 12 }}>
+          {lang === "hi" ? "सहेजी गई कुंडलियाँ चुनने के लिए " : "To pick from your saved kundlis, "}
+          <Link href="/sign-in?redirect_url=%2Fmatch">{lang === "hi" ? "साइन इन करें" : "sign in"}</Link>
+          {lang === "hi" ? " (या नीचे जन्म विवरण सीधे भरें)।" : " (or enter birth details manually below)."}
+        </p>
+      )}
       <div className="grid2">
         <Person title={t("groom")} saved={saved} value={g} onChange={setG} />
         <Person title={t("bride")} saved={saved} value={b} onChange={setB} />
