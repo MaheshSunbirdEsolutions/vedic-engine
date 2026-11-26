@@ -7,11 +7,11 @@ from typing import Literal
 import pathlib
 
 import geonamescache
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp
+from . import auth, doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp
 from .chart import build_chart
 from .dasha import vimshottari
 from .ephemeris import Settings
@@ -384,14 +384,20 @@ def ask_status():
 
 
 @app.post("/ask/key")
-def ask_key(k: AiKeyIn):
+def ask_key(k: AiKeyIn, _user: auth.AuthUser = Depends(auth.require_user)):
     """Save (or clear, with an empty key) the Anthropic API key in data/ai.json on this computer."""
+    if auth.auth_enabled():
+        raise HTTPException(
+            403,
+            "Shared AI key updates are disabled when multi-user authentication is enabled; "
+            "set ANTHROPIC_API_KEY on the server instead.",
+        )
     from . import ask as _ask
     return _ask.save_key(k.api_key, k.model)
 
 
 @app.post("/ask")
-def ask_question(b: AskIn):
+def ask_question(b: AskIn, _user: auth.AuthUser = Depends(auth.require_user)):
     from . import ask as _ask
     s = b.settings.to()
     now = (b.at or datetime.now()).replace(tzinfo=None)
@@ -412,11 +418,60 @@ def books_status():
     return {k: len(list((root / k).glob("*.jpg"))) if (root / k).exists() else 0 for k in ("lalkitab", "bhrigu")}
 
 
-# ---------- saved kundlis ----------
-from fastapi import HTTPException  # noqa: E402
+# ---------- user profile & Clerk webhook ----------
 from . import store  # noqa: E402
 
 
+class ProfileUpdateIn(BaseModel):
+    full_name: str | None = Field(default=None, max_length=120)
+    preferred_lang: Literal["en", "hi"] | None = None
+
+
+@app.get("/me")
+def me_get(user: auth.AuthUser = Depends(auth.require_user)):
+    """Return the authenticated user's profile, creating it on first visit."""
+    claims = user.claims or {}
+    return store.ensure_profile(
+        user.user_id,
+        email=claims.get("email"),
+        full_name=claims.get("name"),
+        token=user.token,
+    )
+
+
+@app.patch("/me")
+def me_update(body: ProfileUpdateIn, user: auth.AuthUser = Depends(auth.require_user)):
+    return store.update_profile(user.user_id, body.model_dump(exclude_none=True), token=user.token)
+
+
+def _clerk_primary_email(data: dict) -> str | None:
+    emails = data.get("email_addresses") or []
+    primary_id = data.get("primary_email_address_id")
+    for item in emails:
+        if item.get("id") == primary_id and item.get("email_address"):
+            return item["email_address"]
+    return emails[0].get("email_address") if emails else None
+
+
+@app.post("/webhooks/clerk")
+async def clerk_webhook(request: Request):
+    """Sync Clerk user lifecycle events (user.created / updated / deleted) into Supabase."""
+    event = await auth.verify_clerk_webhook(request)
+    etype = event.get("type")
+    data = event.get("data") or {}
+    uid = data.get("id")
+    if not uid:
+        raise HTTPException(400, "Webhook missing user id")
+
+    if etype in ("user.created", "user.updated"):
+        name = " ".join(p for p in (data.get("first_name"), data.get("last_name")) if p).strip() or None
+        store.upsert_profile_admin(uid, email=_clerk_primary_email(data), full_name=name)
+    elif etype == "user.deleted":
+        store.delete_user_data_admin(uid)
+    return {"ok": True, "type": etype}
+
+
+# ---------- saved kundlis ----------
 class KundliIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     gender: Literal["male", "female", "other", ""] | None = ""
@@ -436,45 +491,49 @@ class KundliIn(BaseModel):
 
 
 @app.get("/kundlis")
-def kundlis_list(q: str = ""):
-    return store.list_kundlis(q)
+def kundlis_list(q: str = "", user: auth.AuthUser = Depends(auth.require_user)):
+    return store.list_kundlis(q, user_id=user.user_id, token=user.token)
 
 
 @app.post("/kundlis", status_code=201)
-def kundlis_create(k: KundliIn):
-    return store.create(k.record())
+def kundlis_create(k: KundliIn, user: auth.AuthUser = Depends(auth.require_user)):
+    return store.create(k.record(), user_id=user.user_id, token=user.token)
 
 
 @app.get("/kundlis/export")
-def kundlis_export():
-    return {"format": "jyotish-lab-kundlis", "version": 1, "kundlis": store.list_kundlis(limit=100000)}
+def kundlis_export(user: auth.AuthUser = Depends(auth.require_user)):
+    return {
+        "format": "jyotish-lab-kundlis",
+        "version": 1,
+        "kundlis": store.list_kundlis(limit=100000, user_id=user.user_id, token=user.token),
+    }
 
 
 @app.post("/kundlis/import")
-def kundlis_import(payload: dict):
+def kundlis_import(payload: dict, user: auth.AuthUser = Depends(auth.require_user)):
     items = payload.get("kundlis", payload if isinstance(payload, list) else [])
-    return {"imported": store.import_many(items)}
+    return {"imported": store.import_many(items, user_id=user.user_id, token=user.token)}
 
 
 @app.get("/kundlis/{kid}")
-def kundlis_get(kid: str):
-    k = store.get(kid)
+def kundlis_get(kid: str, user: auth.AuthUser = Depends(auth.require_user)):
+    k = store.get(kid, user_id=user.user_id, token=user.token)
     if not k:
         raise HTTPException(404, "kundli not found")
     return k
 
 
 @app.put("/kundlis/{kid}")
-def kundlis_update(kid: str, k: KundliIn):
-    r = store.update(kid, k.record())
+def kundlis_update(kid: str, k: KundliIn, user: auth.AuthUser = Depends(auth.require_user)):
+    r = store.update(kid, k.record(), user_id=user.user_id, token=user.token)
     if not r:
         raise HTTPException(404, "kundli not found")
     return r
 
 
 @app.delete("/kundlis/{kid}")
-def kundlis_delete(kid: str):
-    if not store.delete(kid):
+def kundlis_delete(kid: str, user: auth.AuthUser = Depends(auth.require_user)):
+    if not store.delete(kid, user_id=user.user_id, token=user.token):
         raise HTTPException(404, "kundli not found")
     return {"deleted": kid}
 

@@ -30,7 +30,7 @@ const HOP_BY_HOP_RESPONSE_HEADERS = new Set([
 const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 
 function engineBaseUrl(): string {
-  const raw = process.env.ENGINE_URL || "http://127.0.0.1:8000";
+  const raw = process.env.ENGINE_URL || "https://vedic-engine-eight.vercel.app/engine";
   return raw.endsWith("/") ? raw : `${raw}/`;
 }
 
