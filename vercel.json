@@ -7,7 +7,7 @@
       "entrypoint": "vedic_engine.api:app",
       "functions": {
         "**/*.py": {
-          "excludeFiles": "{web/**,tests/**,tools/**,sources/**,*.md,*.bat,*.sh}"
+          "excludeFiles": "{web/**,tests/**,tools/**,sources/**,vedic_engine/static/books/**,*.md,*.bat,*.sh}"
         }
       }
     },
