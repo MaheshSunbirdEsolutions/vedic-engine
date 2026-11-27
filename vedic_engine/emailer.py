@@ -16,6 +16,8 @@ from datetime import date, datetime
 from email.message import EmailMessage
 from zoneinfo import ZoneInfo
 
+import httpx
+
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover
@@ -31,6 +33,46 @@ if load_dotenv and _ROOT_ENV.exists():
     load_dotenv(_ROOT_ENV, override=False)
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+_CLERK_EMAIL_CACHE: dict[str, str] = {}
+
+
+def resolve_user_email(user_id: str, claims: dict | None = None, token: str | None = None) -> str | None:
+    """Resolve the signed-in user's email from JWT claims, stored profile, or Clerk Backend API."""
+    if not user_id or user_id == "local":
+        return None
+    if claims and isinstance(claims.get("email"), str) and claims["email"].strip():
+        return claims["email"].strip()
+    if user_id in _CLERK_EMAIL_CACHE:
+        return _CLERK_EMAIL_CACHE[user_id]
+    try:
+        prof = store.get_profile(user_id, token=token)
+        if prof and isinstance(prof.get("email"), str) and prof["email"].strip():
+            _CLERK_EMAIL_CACHE[user_id] = prof["email"].strip()
+            return _CLERK_EMAIL_CACHE[user_id]
+    except Exception:  # noqa: BLE001
+        pass
+    secret = os.environ.get("CLERK_SECRET_KEY", "").strip()
+    if not secret:
+        return None
+    try:
+        resp = httpx.get(
+            f"https://api.clerk.com/v1/users/{user_id}",
+            headers={"Authorization": f"Bearer {secret}"},
+            timeout=10.0,
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            addrs = data.get("email_addresses") or []
+            pid = data.get("primary_email_address_id")
+            email = next((a.get("email_address") for a in addrs if a.get("id") == pid and a.get("email_address")), None)
+            if not email and addrs:
+                email = addrs[0].get("email_address")
+            if isinstance(email, str) and email.strip():
+                _CLERK_EMAIL_CACHE[user_id] = email.strip()
+                return _CLERK_EMAIL_CACHE[user_id]
+    except Exception:  # noqa: BLE001
+        pass
+    return None
 
 
 def env_config() -> dict:
@@ -168,31 +210,44 @@ def _build_kundli_email(req: dict, d: date, lang: str, user_id: str = "local", t
     p = r["panchang"]
     cb = r["chandrabala"]
     tip = r["daily_tip"]
+    natal = r.get("natal") or {}
+    dr = r.get("dasha_reading") or {}
+    dasha_str = " / ".join(T(x) for x in (r.get("dasha_now") or []))
+    ab = p.get("abhijit") or {}
+    ab_line = f"{ab.get('start', '')[11:16]}–{ab.get('end', '')[11:16]}" if ab else ""
     name = (k.get("name") or "").strip()
+    rashi_en = natal.get("moon_sign", "")
+    rashi_sa = natal.get("moon_rashi_sanskrit", "")
+    rashi_disp = f"{T(rashi_en)} ({rashi_sa})" if (rashi_en and rashi_sa and T(rashi_en) != rashi_sa) else T(rashi_en)
     base_title = "दैनिक कुंडली राशिफल" if hi else "Daily Kundli Horoscope"
-    title = f"{base_title} — {name}" if name else base_title
+    who = f"{name} · {rashi_disp}" if (name and rashi_disp) else (name or rashi_disp)
+    title = f"{base_title} — {who}" if who else base_title
     subject = f"{title} ({r['date']})"
     panchang_line = f"{T(p['vara'])} · {T(p['tithi']['paksha'])} {T(p['tithi']['name'])} · {T(p['nakshatra']['name'])}"
     rahu_line = f"{p['rahu_kaal']['start'][11:16]}–{p['rahu_kaal']['end'][11:16]}"
+    nums_line = ", ".join(map(str, tip.get("lucky_numbers") or []))
 
     lines = [
         title,
         f"{r['date']} · {panchang_line}",
+        f"{'जन्म विवरण' if hi else 'Birth chart'}: {T(natal.get('lagna', ''))} {'लग्न' if hi else 'Lagna'} · {T(natal.get('moon_sign', ''))} {'राशि' if hi else 'Rashi'} · {T(natal.get('nakshatra', ''))}" if natal else "",
         f"{'मूल्यांकन' if hi else 'Overall'}: {r['rating_label']}",
-        f"{'चंद्रबल' if hi else 'Chandrabala'}: {T(cb['moon_sign'])} ({cb['house_from_moon']}) — {cb['label']} ({cb['bindus']} bindus)",
+        f"{'चंद्रबल' if hi else 'Chandrabala'}: {T(cb['moon_sign'])} ({cb['house_from_moon']}) — {cb['label']} ({cb['bindus']} bindus, SAV {cb.get('sav', '')})",
+        f"{'दशा' if hi else 'Dasha'}: {dasha_str}" + (f" ({dr.get('rating_label', '')})" if dr else ""),
         "",
         r["summary"],
         "",
         f"{'क्षेत्रवार फल' if hi else 'Area Outlook'}:",
-        *[f"- {a['title']} ({a['rating_label']}): {'; '.join(a['reasons'])}" for a in r["areas"]],
+        *[f"- {a['title']} ({a['rating_label']}): {a.get('text', '')} ({'; '.join(a['reasons'])})" for a in r["areas"]],
         "",
         f"{'अनुकूल' if hi else 'Supportive today'}:",
         *[f"- {x}" for x in r["guidance"]["favour"]],
         f"{'सावधानी' if hi else 'Be mindful of'}:",
         *[f"- {x}" for x in r["guidance"]["avoid"]],
         "",
-        f"{'राहु काल' if hi else 'Rahu Kaal'}: {rahu_line}",
-        f"{'शुभ रंग' if hi else 'Colour'}: {tip['colour']}",
+        f"{'राहु काल' if hi else 'Rahu Kaal'}: {rahu_line}" + (f" | {'अभिजित मुहूर्त' if hi else 'Abhijit'}: {ab_line}" if ab_line else ""),
+        f"{'शुभ रंग' if hi else 'Colour'}: {tip['colour']}" + (f" | {'शुभ अंक' if hi else 'Numbers'}: {nums_line}" if nums_line else ""),
+        f"{'उपास्य देव' if hi else 'Deity'}: {tip.get('deity', '')} | {'दान' if hi else 'Daana'}: {tip.get('daana', '')}",
         f"{'सुझाव' if hi else 'Tip'}: {tip['practice']}",
         f"{'मंत्र' if hi else 'Mantra'}: {tip['mantra']}",
     ]
@@ -200,24 +255,25 @@ def _build_kundli_email(req: dict, d: date, lang: str, user_id: str = "local", t
     area_rows = "".join(
         f"<tr><td style='padding:6px 8px;border-bottom:1px solid #eee'><b>{html.escape(a['title'])}</b></td>"
         f"<td style='padding:6px 8px;border-bottom:1px solid #eee'>{html.escape(a['rating_label'])}</td>"
-        f"<td style='padding:6px 8px;border-bottom:1px solid #eee'>{html.escape('; '.join(a['reasons']))}</td></tr>"
+        f"<td style='padding:6px 8px;border-bottom:1px solid #eee'>{html.escape(a.get('text', ''))}<br><span style='color:#7a6f66;font-size:12px'>{html.escape('; '.join(a['reasons']))}</span></td></tr>"
         for a in r["areas"]
     )
     html_body = f"""<div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:640px;margin:0 auto;background:#faf7f2;padding:18px;color:#2b2420">
   <div style="background:#fff;border:1px solid #e8e0d6;border-radius:12px;padding:18px">
     <h2 style="margin:0 0 6px;color:#c2571a">{html.escape(title)}</h2>
-    <p style="margin:0 0 12px;color:#7a6f66;font-size:13px">{html.escape(r['date'])} · {html.escape(panchang_line)} · Rahu Kaal {html.escape(rahu_line)}</p>
-    <p style="margin:0 0 10px"><b>{'मूल्यांकन' if hi else 'Overall'}:</b> {html.escape(r['rating_label'])} · <b>{'चंद्रबल' if hi else 'Chandrabala'}:</b> {html.escape(T(cb['moon_sign']))} ({cb['house_from_moon']}) — {html.escape(cb['label'])}</p>
+    <p style="margin:0 0 10px;color:#7a6f66;font-size:13px">{html.escape(r['date'])} · {html.escape(panchang_line)} · Rahu Kaal {html.escape(rahu_line)}{f' · Abhijit {html.escape(ab_line)}' if ab_line else ''}</p>
+    <p style="margin:0 0 10px"><b>{'मूल्यांकन' if hi else 'Overall'}:</b> {html.escape(r['rating_label'])} · <b>{'चंद्रबल' if hi else 'Chandrabala'}:</b> {html.escape(T(cb['moon_sign']))} ({cb['house_from_moon']}) — {html.escape(cb['label'])}{f' · <b>{"दशा" if hi else "Dasha"}:</b> {html.escape(dasha_str)}' if dasha_str else ''}</p>
     <p style="line-height:1.5">{html.escape(r['summary'])}</p>
     <h3 style="margin:16px 0 8px;font-size:15px">{'क्षेत्रवार फल' if hi else 'Area Outlook'}</h3>
     <table style="width:100%;border-collapse:collapse;font-size:13.5px">{area_rows}</table>
-    <p style="margin:14px 0 6px"><b>{'शुभ रंग' if hi else 'Colour'}:</b> {html.escape(tip['colour'])}</p>
+    <p style="margin:14px 0 6px"><b>{'शुभ रंग' if hi else 'Colour'}:</b> {html.escape(tip['colour'])}{f' · <b>{"शुभ अंक" if hi else "Numbers"}:</b> {html.escape(nums_line)}' if nums_line else ''}</p>
+    <p style="margin:6px 0"><b>{'उपास्य देव' if hi else 'Deity'}:</b> {html.escape(tip.get('deity', ''))} · <b>{'दान' if hi else 'Daana'}:</b> {html.escape(tip.get('daana', ''))}</p>
     <p style="margin:6px 0"><b>{'सुझाव' if hi else 'Tip'}:</b> {html.escape(tip['practice'])}</p>
     <p style="margin:6px 0;color:#7a6f66;font-size:13px"><b>{'मंत्र' if hi else 'Mantra'}:</b> {html.escape(tip['mantra'])}</p>
     <p style="margin:14px 0 0;color:#7a6f66;font-size:12px">{html.escape(r['disclaimer'])}</p>
   </div>
 </div>"""
-    return {"subject": subject, "text": "\n".join(lines), "html": html_body, "date": r["date"]}
+    return {"subject": subject, "text": "\n".join([x for x in lines if x is not None]), "html": html_body, "date": r["date"]}
 
 
 def format_horoscope_email(req: dict, user_id: str = "local", token: str | None = None) -> dict:

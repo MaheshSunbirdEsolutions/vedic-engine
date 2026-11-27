@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { api, birthOf, nowIn, type Kundli as K } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import { Kundli, NorthChart, SIGNS, useLabels } from "./Charts";
@@ -21,6 +22,8 @@ const pad3 = (n: number) => String(n).padStart(3, "0");
 
 export default function Reports({ kundli, chart }: { kundli: K; chart: any }) {
   const { t, lang } = useI18n();
+  const { user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || "";
   const [rep, setRep] = useState("simple");
   const [year, setYear] = useState(new Date().getFullYear());
   const [day, setDay] = useState(() => nowIn(kundli.tz).slice(0, 10));
@@ -59,7 +62,7 @@ export default function Reports({ kundli, chart }: { kundli: K; chart: any }) {
         <div className="rep">
           <HeaderBlock title={t(cur.label) + (rep === "varsh" ? ` ${d.year}` : "")} kundli={kundli} chart={chart} />
           {rep === "simple" && <Simple r={d} />}
-          {rep === "daily" && <DailyView r={d} kundli={kundli} onSelectDay={setDay} />}
+          {rep === "daily" && <DailyView r={d} kundli={kundli} userEmail={userEmail} lockToUserEmail={Boolean(user)} showAllDetails onSelectDay={setDay} />}
           {rep === "issues" && <Issues r={d} books={books} />}
           {rep === "wrong" && <Wrong r={d} />}
           {rep === "full" && <Full r={d} />}

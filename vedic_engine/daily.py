@@ -15,7 +15,7 @@ from datetime import date, datetime, timedelta
 
 from . import ephemeris as eph, i18n, nakshatra as _nak
 from .ashtakavarga import from_chart as _av
-from .constants import NAKSHATRA_SPAN, PLANETS, SIGNS, SIGN_LORDS
+from .constants import NAKSHATRA_SPAN, PLANETS, SIGNS, SIGNS_SANSKRIT, SIGN_LORDS
 from .panchang import panchang
 from .placements import BHAV, explain, ord_hi
 from .predictions import (
@@ -152,6 +152,7 @@ def _transit_score(p: str, hm: int, bindus: int | None) -> float:
 
 def _daily_areas(chart: dict, L: dict[str, float], dasha_lords: list[str], lang: str) -> list[dict]:
     hi = lang == "hi"
+    L_fn = (lambda en, h: h if hi else en)
     lagna = chart["lagna"]["sign_index"] - 1
     moon = chart["planets"]["Moon"]["sign_index"] - 1
     out = []
@@ -182,8 +183,18 @@ def _daily_areas(chart: dict, L: dict[str, float], dasha_lords: list[str], lang:
         rk, rl = _rate(sc, hi)
         if not why:
             why = ["आज कोई विशेष गोचर दबाव नहीं – सामान्य दिन" if hi else "No strong transit trigger today – steady day"]
+        text = (
+            L_fn("Supportive planetary alignment today – good momentum for progress here.",
+                 "आज इस क्षेत्र में ग्रहों का अच्छा सहयोग है – आगे बढ़ने के लिए अनुकूल समय।")
+            if rk in ("excellent", "good") else
+            L_fn("Mixed influences today – proceed steadily and double-check important details.",
+                 "आज इस क्षेत्र में मिला-जुला प्रभाव है – सोच-समझकर और धैर्य से कदम बढ़ाएँ।")
+            if rk == "mixed" else
+            L_fn("Sensitive area today – avoid rushing, conflict, or unnecessary risks.",
+                 "आज इस क्षेत्र में सावधानी रखें – जल्दबाज़ी, विवाद या अनावश्यक जोखिम से बचें।")
+        )
         out.append({"area": key, "title": h_ if hi else en, "score": round(sc, 2),
-                    "rating": rk, "rating_label": rl, "reasons": why[:3]})
+                    "rating": rk, "rating_label": rl, "text": text, "reasons": why[:3]})
     return out
 
 
@@ -288,9 +299,12 @@ def for_chart(chart: dict, dasha3: dict, birth: datetime, tz: str, lat: float, l
                      L_fn("Favourable", "शुभ चंद्रबल") if moon_good else L_fn("Average / Restful", "सामान्य / मध्यम"))
 
     # Overall summary paragraph
+    natal_rashi_i = chart["planets"]["Moon"]["sign_index"] - 1
+    natal_rashi = SIGNS[natal_rashi_i]
+    natal_rashi_sa = SIGNS_SANSKRIT[natal_rashi_i]
     summary_parts = [
-        L_fn(f"{day.strftime('%A, %d %B %Y')}: overall a {core['rating_label']} day.",
-             f"{day.isoformat()} ({_T(lang, p['vara'])}): आज का दिन कुल मिलाकर {core['rating_label']} है।"),
+        L_fn(f"For your {natal_rashi} ({natal_rashi_sa}) Rashi — {day.strftime('%A, %d %B %Y')} is overall a {core['rating_label']} day.",
+             f"आपकी {_T(lang, natal_rashi)} ({natal_rashi_sa}) राशि के लिए {day.isoformat()} ({_T(lang, p['vara'])}) कुल मिलाकर {core['rating_label']} दिन है।"),
         L_fn(f"Transit Moon is in {moon_sign_name} ({_ord(hm, False)} from your natal Moon, {_ord(hl, False)} from Lagna) with {moon_bindus} Ashtakavarga bindus.",
              f"गोचर चंद्र {_T(lang, moon_sign_name)} में है (जन्म चंद्र से {ord_hi(hm)}, लग्न से {ord_hi(hl)}) – अष्टकवर्ग बिंदु {moon_bindus}।"),
         chandra_note,
@@ -327,13 +341,38 @@ def for_chart(chart: dict, dasha3: dict, birth: datetime, tz: str, lat: float, l
     # Simple daily tip / remedy (weekday lord + Moon if Chandrashtama)
     tip_planet = "Moon" if chandrashtama else vara_lord
     rem = REM_PLANET[tip_planet]
+    moon_lord = SIGN_LORDS[chart["planets"]["Moon"]["sign_index"] - 1]
+    nums = list(dict.fromkeys(LUCKY_NUMBERS[vara_lord] + LUCKY_NUMBERS[moon_lord]))[:4]
     daily_tip = {
         "planet": tip_planet,
         "colour": VARA_COLOUR[vara_lord][1 if hi else 0],
+        "lucky_numbers": nums,
+        "deity": f"{rem['deity'][1 if hi else 0]} ({rem['avatar'][1 if hi else 0]})",
         "mantra": rem["mantra"] if hi else rem["mantra_en"],
         "practice": rem["practice"][1 if hi else 0],
         "daana": rem["daana"][1 if hi else 0],
     }
+
+    # Abhijit muhurta (8th of 15 daytime muhurtas, centred around solar noon)
+    rise_dt = datetime.fromisoformat(p["sunrise"])
+    set_dt = datetime.fromisoformat(p["sunset"])
+    muh = (set_dt - rise_dt) / 15
+    ab_start = rise_dt + muh * 7
+    ab_end = rise_dt + muh * 8
+
+    # Health watch (birth nakshatra + today's transit nakshatra)
+    birth_nak_name = chart["planets"]["Moon"]["nakshatra"]["name"]
+    day_nak_name = p["nakshatra"]["name"]
+    health_watch = []
+    for kind, nm in (("birth", birth_nak_name), ("today", day_nak_name)):
+        hw = _nak.HEALTH.get(nm)
+        if hw:
+            health_watch.append({
+                "kind": kind,
+                "nakshatra": nm,
+                "parts": hw[0][1 if hi else 0],
+                "watch": hw[1][1 if hi else 0],
+            })
 
     # 7-day strip (today + next 6 days)
     week = []
@@ -362,6 +401,16 @@ def for_chart(chart: dict, dasha3: dict, birth: datetime, tz: str, lat: float, l
         "rating": core["rating"],
         "rating_label": core["rating_label"],
         "summary": " ".join(summary_parts),
+        "natal": {
+            "lagna": chart["lagna"]["sign"],
+            "lagna_sanskrit": SIGNS_SANSKRIT[chart["lagna"]["sign_index"] - 1],
+            "moon_sign": chart["planets"]["Moon"]["sign"],
+            "moon_rashi_sanskrit": SIGNS_SANSKRIT[natal_rashi_i],
+            "moon_lord": SIGN_LORDS[natal_rashi_i],
+            "nakshatra": birth_nak_name,
+            "pada": chart["planets"]["Moon"]["nakshatra"]["pada"],
+            "ghat_nakshatra": _nak.GHAT[natal_rashi_i],
+        },
         "panchang": {
             "vara": p["vara"],
             "vara_lord": vara_lord,
@@ -372,6 +421,10 @@ def for_chart(chart: dict, dasha3: dict, birth: datetime, tz: str, lat: float, l
             "sunrise": p["sunrise"],
             "sunset": p["sunset"],
             "rahu_kaal": p["rahu_kaal"],
+            "abhijit": {
+                "start": ab_start.isoformat(timespec="minutes"),
+                "end": ab_end.isoformat(timespec="minutes"),
+            },
         },
         "chandrabala": {
             "moon_sign": moon_sign_name,
@@ -389,10 +442,12 @@ def for_chart(chart: dict, dasha3: dict, birth: datetime, tz: str, lat: float, l
         "yogas": core["yogas"]["good_yogas"],
         "cautions": core["yogas"]["cautions"],
         "dasha_now": dasha_lords,
+        "dasha_period": pd_now,
         "dasha_reading": core["pdr"] or core["pr"],
         "sade_sati": core["sade_sati"],
         "areas": areas,
         "transits": core["transits"],
+        "health_watch": health_watch,
         "guidance": {"favour": favour, "avoid": avoid},
         "daily_tip": daily_tip,
         "week": week,
@@ -631,6 +686,7 @@ def by_signs(day: date, tz: str = "Asia/Kolkata", lat: float = 28.6139, lon: flo
 
         signs_out.append({
             "sign": rashi_name,
+            "sanskrit": SIGNS_SANSKRIT[rashi_idx],
             "sign_index": rashi_idx + 1,
             "lord": rashi_lord,
             "score": round(sc, 2),

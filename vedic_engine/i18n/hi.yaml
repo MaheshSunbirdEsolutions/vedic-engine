@@ -429,6 +429,20 @@ ui:
   email_smtp_missing: ".env में SMTP सेट नहीं"
   email_env_hint: "रूट .env फ़ाइल में SMTP_HOST, SMTP_PORT, SMTP_SECURITY, SMTP_USER, SMTP_PASSWORD और SMTP_FROM सेट करके इंजन रीस्टार्ट करें।"
   email_preview: "ईमेल पूर्वावलोकन"
+  abhijit_muhurta: "अभिजित मुहूर्त"
+  dasha_backdrop: "वर्तमान दशा व सक्रिय विषय"
+  dasha_themes: "सक्रिय विषय"
+  natal_profile: "जन्म कुंडली"
+  sade_sati_status: "शनि गोचर स्थिति"
+  send_to_my_email: "मेरे ईमेल पर भेजें"
+  signed_in_as: "साइन इन:"
+  sign_in_horoscope: "अपना विस्तृत व्यक्तिगत दैनिक राशिफल देखने और अपने ईमेल पर भेजने के लिए साइन इन करें।"
+  need_kundli_horoscope: "अपना व्यक्तिगत दैनिक राशिफल देखने के लिए एक बार अपना जन्म विवरण सहेजें।"
+  create_my_kundli: "मेरा जन्म विवरण सहेजें"
+  add_kundli: "नई कुंडली जोड़ें"
+  birth_nak_watch: "जन्म नक्षत्र"
+  today_nak_watch: "आज का नक्षत्र"
+  karaka_focus: "ग्रह कारकत्व"
 
 abbr:
   Sun: सू

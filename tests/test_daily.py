@@ -19,11 +19,17 @@ def test_personalized_daily_horoscope():
     assert r["chandrabala"]["moon_sign"]
     assert 1 <= r["chandrabala"]["house_from_moon"] <= 12
     assert r["tarabala"] and r["tarabala"]["name"]
+    assert r["natal"]["lagna"] and r["natal"]["moon_sign"] and r["natal"]["ghat_nakshatra"]
+    assert r["natal"]["moon_rashi_sanskrit"] and r["natal"]["lagna_sanskrit"] and r["natal"]["moon_lord"]
+    assert r["natal"]["moon_sign"] in r["summary"]
+    assert r["panchang"]["abhijit"]["start"] and r["panchang"]["abhijit"]["end"]
+    assert r["dasha_period"] and r["dasha_reading"]["themes"]
+    assert len(r["health_watch"]) == 2
     assert len(r["transits"]) == 9
-    assert len(r["areas"]) == 8
+    assert len(r["areas"]) == 8 and all(a["text"] for a in r["areas"])
     assert len(r["week"]) == 7
     assert r["week"][0]["date"] == "2026-11-26"
-    assert r["daily_tip"]["mantra"] and r["daily_tip"]["colour"]
+    assert r["daily_tip"]["mantra"] and r["daily_tip"]["colour"] and r["daily_tip"]["lucky_numbers"] and r["daily_tip"]["deity"]
 
 
 def test_personalized_daily_hindi():

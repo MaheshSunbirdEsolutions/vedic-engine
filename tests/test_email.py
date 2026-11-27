@@ -1,9 +1,9 @@
-"""SMTP email sharing for daily horoscope (env-only config, preview, and mocked SMTP send)."""
+"""SMTP email sharing for daily horoscope (env-only config, auth restriction, preview, and mocked SMTP)."""
 import smtplib
 
 from fastapi.testclient import TestClient
 
-from vedic_engine import emailer
+from vedic_engine import auth, emailer
 from vedic_engine.api import app
 
 C = TestClient(app)
@@ -52,8 +52,8 @@ def test_email_send_smtp_from_env_mocked(monkeypatch, tmp_path):
     monkeypatch.setenv("SMTP_HOST", "smtp.gmail.com")
     monkeypatch.setenv("SMTP_PORT", "587")
     monkeypatch.setenv("SMTP_SECURITY", "starttls")
-    monkeypatch.setenv("SMTP_USER", "surya@mandavconsultancy.com")
-    monkeypatch.setenv("SMTP_PASSWORD", "nbfv eeml jedo jauw")
+    monkeypatch.setenv("SMTP_USER", "jyotish@gmail.com")
+    monkeypatch.setenv("SMTP_PASSWORD", "secret-app-pw")
     monkeypatch.setenv("SMTP_FROM", "jyotish@gmail.com")
     sent = []
 
@@ -100,3 +100,65 @@ def test_email_send_smtp_from_env_mocked(monkeypatch, tmp_path):
     assert "Leo" in msg["Subject"]
     assert "user1@example.com" in msg["To"] and "user2@example.com" in msg["To"]
     assert msg.is_multipart()
+
+
+def test_email_restricted_to_signed_in_user_when_auth_enabled(monkeypatch, tmp_path):
+    monkeypatch.setattr(emailer, "_ROOT_ENV", tmp_path / ".env")
+    monkeypatch.setattr(auth, "auth_enabled", lambda: True)
+    monkeypatch.setattr(auth, "verify_clerk_token", lambda tok: auth.AuthUser(
+        user_id="user_123", token=tok, claims={"sub": "user_123", "email": "alice@example.com"},
+    ))
+    monkeypatch.setenv("SMTP_HOST", "smtp.gmail.com")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    monkeypatch.setenv("SMTP_SECURITY", "starttls")
+    monkeypatch.setenv("SMTP_USER", "jyotish@gmail.com")
+    monkeypatch.setenv("SMTP_PASSWORD", "secret-app-pw")
+    monkeypatch.setenv("SMTP_FROM", "jyotish@gmail.com")
+
+    sent = []
+
+    class FakeSMTP:
+        def __init__(self, *a, **kw):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def ehlo(self):
+            pass
+
+        def starttls(self, context=None):
+            pass
+
+        def login(self, user, pw):
+            pass
+
+        def send_message(self, msg):
+            sent.append(msg)
+
+    monkeypatch.setattr(smtplib, "SMTP", FakeSMTP)
+
+    # Unauthenticated request rejected
+    r0 = C.post("/email/horoscope", json={"kind": "rashi", "sign": "Aries"})
+    assert r0.status_code == 401
+
+    # Trying to send to another email rejected
+    r1 = C.post(
+        "/email/horoscope",
+        headers={"Authorization": "Bearer fake-jwt"},
+        json={"to_email": "someone_else@example.com", "kind": "rashi", "sign": "Aries"},
+    )
+    assert r1.status_code == 403
+
+    # Omitting to_email or matching signed-in email succeeds
+    r2 = C.post(
+        "/email/horoscope",
+        headers={"Authorization": "Bearer fake-jwt"},
+        json={"kind": "rashi", "sign": "Aries", "day": "2026-11-27"},
+    )
+    assert r2.status_code == 200
+    assert r2.json()["to"] == ["alice@example.com"]
+    assert len(sent) == 1 and sent[0]["To"] == "alice@example.com"

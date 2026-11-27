@@ -8,21 +8,40 @@ type Props = {
   kind: "rashi" | "kundli";
   sign?: string;
   kundli?: Kundli;
+  userEmail?: string;
+  lockToUserEmail?: boolean;
   tz: string;
   lat: number;
   lon: number;
   day: string;
 };
 
-export default function EmailShareButton({ kind, sign = "Aries", kundli, tz, lat, lon, day }: Props) {
+export default function EmailShareButton({
+  kind,
+  sign = "Aries",
+  kundli,
+  userEmail,
+  lockToUserEmail = false,
+  tz,
+  lat,
+  lon,
+  day,
+}: Props) {
   const { t, T, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const [st, setSt] = useState<any>(null);
-  const [toEmail, setToEmail] = useState("");
+  const [toEmail, setToEmail] = useState(userEmail || "");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState("");
   const [preview, setPreview] = useState<{ subject: string; text: string } | null>(null);
+
+  const locked = Boolean(lockToUserEmail || userEmail);
+  const targetEmail = (userEmail || toEmail).trim();
+
+  useEffect(() => {
+    if (userEmail) setToEmail(userEmail);
+  }, [userEmail]);
 
   useEffect(() => {
     if (open && !st) {
@@ -31,7 +50,7 @@ export default function EmailShareButton({ kind, sign = "Aries", kundli, tz, lat
   }, [open, st]);
 
   const basePayload = () => ({
-    to_email: toEmail.trim(),
+    to_email: targetEmail,
     kind,
     sign,
     kundli_id: kundli?.id || "",
@@ -42,7 +61,7 @@ export default function EmailShareButton({ kind, sign = "Aries", kundli, tz, lat
   });
 
   const send = async () => {
-    if (!toEmail.trim()) {
+    if (!targetEmail) {
       setErr(t("email_need_to"));
       return;
     }
@@ -74,7 +93,7 @@ export default function EmailShareButton({ kind, sign = "Aries", kundli, tz, lat
     <div className="noprint" style={{ marginTop: 8, marginBottom: 12 }}>
       <div className="btnrow" style={{ alignItems: "center" }}>
         <button type="button" className="btn light" onClick={() => setOpen((x) => !x)}>
-          ✉ {t("email_share_btn")}
+          ✉ {locked && targetEmail ? `${t("send_to_my_email")} (${targetEmail})` : t("email_share_btn")}
         </button>
         {open && st && (
           <span className={`chip ${st.configured ? "good" : "mixed"}`}>
@@ -93,17 +112,26 @@ export default function EmailShareButton({ kind, sign = "Aries", kundli, tz, lat
           </div>
 
           <div className="btnrow" style={{ alignItems: "end" }}>
-            <div style={{ flex: 2, minWidth: 220 }}>
-              <label>{t("email_to")}</label>
-              <input
-                type="text"
-                inputMode="email"
-                value={toEmail}
-                placeholder={t("email_to_ph")}
-                onChange={(e) => setToEmail(e.target.value)}
-              />
-            </div>
-            <button type="button" className="btn" disabled={busy} onClick={send}>
+            {locked ? (
+              <div style={{ flex: 2, minWidth: 220 }}>
+                <label>{t("email_to")}</label>
+                <div className="chip gray" style={{ padding: "8px 12px", fontSize: 13.5 }}>
+                  {targetEmail || "—"}
+                </div>
+              </div>
+            ) : (
+              <div style={{ flex: 2, minWidth: 220 }}>
+                <label>{t("email_to")}</label>
+                <input
+                  type="text"
+                  inputMode="email"
+                  value={toEmail}
+                  placeholder={t("email_to_ph")}
+                  onChange={(e) => setToEmail(e.target.value)}
+                />
+              </div>
+            )}
+            <button type="button" className="btn" disabled={busy || !targetEmail} onClick={send}>
               {busy ? t("email_sending") : t("email_send")}
             </button>
             <button type="button" className="ghost" disabled={busy} onClick={togglePreview}>
