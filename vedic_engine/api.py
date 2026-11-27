@@ -12,8 +12,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp, whatsapp as _wa
-from . import auth, doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp
+from . import auth, doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp, whatsapp as _wa
 from .chart import build_chart
 from .dasha import vimshottari
 from .ephemeris import Settings

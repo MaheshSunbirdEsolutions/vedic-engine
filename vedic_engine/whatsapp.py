@@ -365,6 +365,8 @@ def _loop() -> None:
 
 def start_scheduler() -> None:
     global _THREAD
+    if os.environ.get("VERCEL"):
+        return
     if _THREAD and _THREAD.is_alive():
         return
     _STOP.clear()
