@@ -8,6 +8,7 @@ export default function Header() {
   const path = usePathname();
   const nav = [
     { href: "/", key: "nav_home", on: path === "/" || path.startsWith("/kundli") },
+    { href: "/horoscope", key: "nav_horoscope", on: path.startsWith("/horoscope") },
     { href: "/panchang", key: "nav_panchang", on: path.startsWith("/panchang") },
     { href: "/match", key: "nav_match", on: path.startsWith("/match") },
   ];
