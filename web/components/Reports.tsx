@@ -59,7 +59,7 @@ export default function Reports({ kundli, chart }: { kundli: K; chart: any }) {
         <div className="rep">
           <HeaderBlock title={t(cur.label) + (rep === "varsh" ? ` ${d.year}` : "")} kundli={kundli} chart={chart} />
           {rep === "simple" && <Simple r={d} />}
-          {rep === "daily" && <DailyView r={d} onSelectDay={setDay} />}
+          {rep === "daily" && <DailyView r={d} kundli={kundli} onSelectDay={setDay} />}
           {rep === "issues" && <Issues r={d} books={books} />}
           {rep === "wrong" && <Wrong r={d} />}
           {rep === "full" && <Full r={d} />}

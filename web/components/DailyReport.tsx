@@ -1,12 +1,14 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useI18n } from "@/lib/i18n";
+import type { Kundli } from "@/lib/api";
 import { Fold } from "./Explain";
+import EmailShareButton from "./EmailShareButton";
 
 const rateChip = (k: string) => (k === "excellent" || k === "good" ? "good" : k === "mixed" ? "mixed" : "bad");
 const rateCls = (k: string) => (k === "excellent" || k === "good" ? "benefic" : k === "mixed" ? "mixed" : "challenging");
 
-export function DailyView({ r, onSelectDay }: { r: any; onSelectDay?: (day: string) => void }) {
+export function DailyView({ r, kundli, onSelectDay }: { r: any; kundli?: Kundli; onSelectDay?: (day: string) => void }) {
   const { t, T, fmtD } = useI18n();
   const p = r.panchang;
   const cb = r.chandrabala;
@@ -20,6 +22,16 @@ export function DailyView({ r, onSelectDay }: { r: any; onSelectDay?: (day: stri
         {fmtD(r.date)}{" "}
         <span className={`chip ${rateChip(r.rating)}`}>{r.rating_label}</span>
       </h2>
+      {kundli && (
+        <EmailShareButton
+          kind="kundli"
+          kundli={kundli}
+          tz={kundli.tz}
+          lat={kundli.lat}
+          lon={kundli.lon}
+          day={r.date}
+        />
+      )}
       <p style={{ fontSize: 15 }}>{r.summary}</p>
 
       <div className="summary">

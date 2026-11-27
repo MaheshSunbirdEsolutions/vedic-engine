@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -6,7 +6,7 @@ import { api, birthOf, nowIn, type Kundli, type Place } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import PlaceSearch from "@/components/PlaceSearch";
 import { DailyView } from "@/components/DailyReport";
-import WhatsAppPanel from "@/components/WhatsAppPanel";
+import EmailShareButton from "@/components/EmailShareButton";
 
 const DEFAULT_PLACE: Place = { name: "New Delhi", country: "India", lat: 28.6139, lon: 77.209, tz: "Asia/Kolkata" };
 const rateChip = (k: string) => (k === "excellent" || k === "good" ? "good" : k === "mixed" ? "mixed" : "bad");
@@ -189,6 +189,7 @@ export default function HoroscopePage() {
   const signs = rashiData?.signs || [];
   const activeSign = selectedSign ? signs.find((s: any) => s.sign === selectedSign) : null;
   const p = rashiData?.panchang;
+  const selectedKundli = saved.find((x) => x.id === kid);
 
   return (
     <div className="page">
@@ -228,13 +229,13 @@ export default function HoroscopePage() {
         </div>
 
         {err && <p className="err" style={{ display: "block" }}>{err}</p>}
-        <WhatsAppPanel
+        <EmailShareButton
           kind={mode}
           sign={selectedSign || "Aries"}
-          kundliId={kid}
-          tz={(mode === "kundli" ? saved.find((x) => x.id === kid)?.tz : place?.tz) || DEFAULT_PLACE.tz}
-          lat={(mode === "kundli" ? saved.find((x) => x.id === kid)?.lat : place?.lat) ?? DEFAULT_PLACE.lat}
-          lon={(mode === "kundli" ? saved.find((x) => x.id === kid)?.lon : place?.lon) ?? DEFAULT_PLACE.lon}
+          kundli={mode === "kundli" ? selectedKundli : undefined}
+          tz={(mode === "kundli" ? selectedKundli?.tz : place?.tz) || DEFAULT_PLACE.tz}
+          lat={(mode === "kundli" ? selectedKundli?.lat : place?.lat) ?? DEFAULT_PLACE.lat}
+          lon={(mode === "kundli" ? selectedKundli?.lon : place?.lon) ?? DEFAULT_PLACE.lon}
           day={day}
         />
         {loading && <div className="empty">{t("loading")}</div>}

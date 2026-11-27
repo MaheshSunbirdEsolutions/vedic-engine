@@ -1,7 +1,6 @@
 """HTTP API.  Run:  uvicorn vedic_engine.api:app --reload"""
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
 from datetime import date, datetime
 from typing import Literal
 
@@ -12,24 +11,14 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import auth, doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp, whatsapp as _wa
+from . import auth, doshas, emailer as _email, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp
 from .chart import build_chart
 from .dasha import vimshottari
 from .ephemeris import Settings
 from .panchang import panchang
 from .rules import facts_from_chart, interpret
 
-
-@asynccontextmanager
-async def _lifespan(_app: FastAPI):
-    _wa.start_scheduler()
-    try:
-        yield
-    finally:
-        _wa.stop_scheduler()
-
-
-app = FastAPI(title="Vedic Engine", version="1.1.0", lifespan=_lifespan)
+app = FastAPI(title="Vedic Engine", version="1.1.0")
 
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 import os as _os  # noqa: E402
@@ -370,50 +359,46 @@ def horoscope_daily_get(day: date | None = None, tz: str = "Asia/Kolkata", lat: 
     return _daily.by_signs(day or date.today(), tz, lat, lon, Settings(), lang)
 
 
-# ---------- WhatsApp daily 7:00 AM delivery ----------
-class WhatsAppScheduleIn(BaseModel):
-    enabled: bool = True
-    phone: str = ""
+# ---------- SMTP email sharing for daily horoscope ----------
+class EmailHoroscopeIn(BaseModel):
+    to_email: str = ""
     kind: Literal["rashi", "kundli"] = "rashi"
     sign: str = "Aries"
     kundli_id: str = ""
-    time: str = "07:00"
+    name: str | None = ""
+    datetime_local: datetime | None = None
     tz: str = "Asia/Kolkata"
     lat: float = 28.6139
     lon: float = 77.2090
+    settings: SettingsIn = SettingsIn()
     lang: Literal["en", "hi"] = "en"
-    provider: Literal["callmebot", "twilio", "meta", "webhook"] | None = None
-    provider_config: dict | None = None
     day: date | None = None
+    preview_only: bool = False
 
 
-@app.get("/whatsapp/status")
-def whatsapp_status():
-    return _wa.status()
+@app.get("/email/status")
+def email_status():
+    return _email.status()
 
 
-@app.post("/whatsapp/schedule")
-def whatsapp_schedule(req: WhatsAppScheduleIn):
+@app.post("/email/horoscope")
+def email_horoscope(req: EmailHoroscopeIn, user: auth.AuthUser | None = Depends(auth.optional_user)):
+    uid = user.user_id if user else "local"
+    tok = user.token if user else None
+    payload = req.model_dump()
+    if req.datetime_local is not None:
+        payload["datetime_local"] = req.datetime_local.replace(tzinfo=None).isoformat(timespec="seconds")
+    if req.preview_only:
+        try:
+            return _email.format_horoscope_email(payload, user_id=uid, token=tok)
+        except ValueError as exc:
+            raise HTTPException(400, str(exc)) from exc
     try:
-        return _wa.configure(req.model_dump(exclude={"day"}))
+        return _email.share_horoscope(payload, user_id=uid, token=tok)
     except ValueError as exc:
         raise HTTPException(400, str(exc)) from exc
-
-
-@app.post("/whatsapp/preview")
-def whatsapp_preview(req: WhatsAppScheduleIn):
-    try:
-        return _wa.format_message(req.model_dump(), day=req.day)
-    except ValueError as exc:
-        raise HTTPException(400, str(exc)) from exc
-
-
-@app.post("/whatsapp/send-now")
-def whatsapp_send_now(req: WhatsAppScheduleIn):
-    try:
-        return _wa.send_now(override=req.model_dump(exclude={"day", "enabled"}), day=req.day)
-    except ValueError as exc:
-        raise HTTPException(400, str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(502, f"SMTP send failed: {exc}") from exc
 
 
 @app.post("/report/tirtha")
