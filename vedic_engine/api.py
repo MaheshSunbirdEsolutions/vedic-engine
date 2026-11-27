@@ -383,6 +383,17 @@ def email_status():
 
 @app.post("/email/horoscope")
 def email_horoscope(req: EmailHoroscopeIn, user: auth.AuthUser | None = Depends(auth.optional_user)):
+    if auth.auth_enabled():
+        if user is None:
+            raise HTTPException(401, "Sign in to email your daily horoscope.")
+        user_email = _email.resolve_user_email(user.user_id, user.claims, user.token)
+        if user_email:
+            if req.to_email.strip() and req.to_email.strip().lower() != user_email.lower():
+                raise HTTPException(403, "Emails can only be sent to your signed-in account email.")
+            req = req.model_copy(update={"to_email": user_email})
+        elif not req.to_email.strip():
+            raise HTTPException(400, "No email address found for your signed-in account.")
+
     uid = user.user_id if user else "local"
     tok = user.token if user else None
     payload = req.model_dump()
@@ -514,9 +525,10 @@ class ProfileUpdateIn(BaseModel):
 def me_get(user: auth.AuthUser = Depends(auth.require_user)):
     """Return the authenticated user's profile, creating it on first visit."""
     claims = user.claims or {}
+    resolved_email = _email.resolve_user_email(user.user_id, claims, user.token)
     return store.ensure_profile(
         user.user_id,
-        email=claims.get("email"),
+        email=resolved_email or claims.get("email"),
         full_name=claims.get("name"),
         token=user.token,
     )

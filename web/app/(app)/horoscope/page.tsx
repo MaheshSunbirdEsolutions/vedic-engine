@@ -1,316 +1,266 @@
-﻿"use client";
+"use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { api, birthOf, nowIn, type Kundli, type Place } from "@/lib/api";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { api, birthOf, nowIn, type Kundli } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
-import PlaceSearch from "@/components/PlaceSearch";
+import BirthForm from "@/components/BirthForm";
 import { DailyView } from "@/components/DailyReport";
-import EmailShareButton from "@/components/EmailShareButton";
-
-const DEFAULT_PLACE: Place = { name: "New Delhi", country: "India", lat: 28.6139, lon: 77.209, tz: "Asia/Kolkata" };
-const rateChip = (k: string) => (k === "excellent" || k === "good" ? "good" : k === "mixed" ? "mixed" : "bad");
-const rateCls = (k: string) => (k === "excellent" || k === "good" ? "benefic" : k === "mixed" ? "mixed" : "challenging");
-
-function RashiDetail({ s, p, moonSign, onSelectDay, onBack }: { s: any; p: any; moonSign: string; onSelectDay: (d: string) => void; onBack: () => void }) {
-  const { t, T, fmtD } = useI18n();
-  return (
-    <div className="rep">
-      <div className="kheader" style={{ marginBottom: 10 }}>
-        <h2 style={{ margin: 0 }}>{T(s.sign)}</h2>
-        <span className={`chip ${rateChip(s.rating)}`}>{s.rating_label}</span>
-        <span className="note">{t("lord")}: {T(s.lord)} · {t("score")}: {s.score}</span>
-        {s.chandrashtama && <span className="chip bad">Chandrashtama (8th)</span>}
-        {s.ghat_nakshatra && <span className="chip bad">{t("ghat_nak")}: {T(s.ghat_nakshatra_name)}</span>}
-        {s.saturn_phase && <span className="chip mixed">{t("sade_dhaiya")}: {T(s.saturn_phase)}</span>}
-        <button className="ghost noprint" style={{ marginLeft: "auto" }} onClick={onBack}>← {t("all_signs")}</button>
-      </div>
-
-      <p style={{ fontSize: 15 }}>{s.overview}</p>
-
-      <div className="summary">
-        <div className="stat">
-          <span>{t("transit_moon")}</span>
-          <b>{T(moonSign)} (+{s.moon_house})</b>
-          <span>{T(p.nakshatra.name)}</span>
-        </div>
-        <div className="stat">
-          <span>{t("lucky_colour")}</span>
-          <b>{s.colour}</b>
-        </div>
-        <div className="stat">
-          <span>{t("lucky_numbers")}</span>
-          <b>{s.lucky_numbers.join(", ")}</b>
-        </div>
-        <div className="stat">
-          <span>{t("sade_dhaiya")}</span>
-          <b>{s.saturn_phase ? T(s.saturn_phase) : t("normal_saturn")}</b>
-        </div>
-        <div className="stat">
-          <span>{t("rahu_kaal")}</span>
-          <b>{p.rahu_kaal.start.slice(11, 16)}–{p.rahu_kaal.end.slice(11, 16)}</b>
-          <span>{t("sunrise")} {p.sunrise.slice(11, 16)}</span>
-        </div>
-      </div>
-
-      <div className="grid2" style={{ marginTop: 12 }}>
-        <div className="finding benefic">
-          <h4>{t("daily_favour")}</h4>
-          <ul>{s.guidance.favour.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul>
-        </div>
-        <div className="finding challenging">
-          <h4>{t("daily_avoid")}</h4>
-          <ul>{s.guidance.avoid.map((x: string, i: number) => <li key={i}>{x}</li>)}</ul>
-        </div>
-      </div>
-
-      <h3>{t("area_outlook")}</h3>
-      <div className="rem">
-        {s.areas.map((a: any) => (
-          <div
-            key={a.area}
-            className="box"
-            style={{ borderLeft: `4px solid var(--${rateChip(a.rating) === "good" ? "good" : rateChip(a.rating) === "mixed" ? "mixed" : "bad"})` }}
-          >
-            <h5>{a.title} <span className={`chip ${rateChip(a.rating)}`}>{a.rating_label}</span></h5>
-            <p style={{ margin: "4px 0 6px" }}>{a.text}</p>
-            <ul>{a.reasons.map((x: string, i: number) => <li key={i} className="note">{x}</li>)}</ul>
-          </div>
-        ))}
-      </div>
-
-      <div className="finding mixed" style={{ marginTop: 14 }}>
-        <h4>{t("daily_tip")} · {T(s.lord)}</h4>
-        <p>{s.tip}</p>
-        <p><b>{t("deity_worship")}:</b> {s.deity} · <b>{t("daana")}:</b> {s.daana}</p>
-        <p className="note"><b>{t("sys_mantra")}:</b> {s.mantra}</p>
-        {s.health_watch && (
-          <p className="note">
-            <b>{t("health_watch_today")}:</b> {s.health_watch.parts} ({s.health_watch.watch})
-          </p>
-        )}
-      </div>
-
-      {s.week?.length > 0 && (
-        <>
-          <h3>{t("next_7_days_rashi")}</h3>
-          <div className="mini" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(135px,1fr))" }}>
-            {s.week.map((w: any, idx: number) => (
-              <div
-                key={w.date}
-                className={`stat ${idx === 0 ? "cur" : ""}`}
-                style={{
-                  cursor: "pointer",
-                  borderColor: idx === 0 ? "var(--accent)" : undefined,
-                  borderWidth: idx === 0 ? 2 : undefined,
-                }}
-                onClick={() => onSelectDay(w.date)}
-              >
-                <span>{fmtD(w.date)} · {w.weekday}</span>
-                <b><span className={`chip ${rateChip(w.rating)}`}>{w.rating_label}</span></b>
-                <span>{T(w.moon_sign)} (+{w.moon_house})</span>
-                <span className="note">{T(w.nakshatra)}{w.chandrashtama ? " · ⚠ 8th" : ""}</span>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      <h3>{t("transits_from_rashi")} {T(s.sign)}</h3>
-      <div style={{ overflow: "auto" }}>
-        <table>
-          <tbody>
-            <tr>
-              <th>{t("graha")}</th>
-              <th>{t("sign")}</th>
-              <th>{t("nakshatra")}</th>
-              <th>{t("house")}</th>
-              <th></th>
-            </tr>
-            {s.transits.map((x: any) => (
-              <tr key={x.planet} className={rateCls(x.good ? "good" : "mixed")}>
-                <td><b>{T(x.planet)}</b></td>
-                <td>{T(x.sign)}</td>
-                <td>{T(x.nakshatra)}</td>
-                <td><span className={`chip ${x.good ? "good" : "gray"}`}>{x.house_from_moon}</span></td>
-                <td className="note">{x.text}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
 
 export default function HoroscopePage() {
-  const { t, T, lang, fmtD } = useI18n();
-  const [mode, setMode] = useState<"rashi" | "kundli">("rashi");
+  const { t, T, lang } = useI18n();
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
   const [day, setDay] = useState(() => new Date().toISOString().slice(0, 10));
-  const [place, setPlace] = useState<Place | null>(DEFAULT_PLACE);
-  const [rashiData, setRashiData] = useState<any>(null);
-  const [selectedSign, setSelectedSign] = useState<string>("");
   const [saved, setSaved] = useState<Kundli[]>([]);
+  const [kundlisLoaded, setKundlisLoaded] = useState(false);
   const [kid, setKid] = useState("");
+  const [fallbackKundli, setFallbackKundli] = useState<Kundli | null>(null);
   const [personal, setPersonal] = useState<any>(null);
+  const [chart, setChart] = useState<any>(null);
+  const [profileEmail, setProfileEmail] = useState("");
+  const [adding, setAdding] = useState(false);
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    api<Kundli[]>("/kundlis").then((xs) => {
-      setSaved(xs);
-      if (xs.length && !kid) setKid(xs[0].id || "");
-    }).catch(() => {});
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const lbl = (k: string, en: string, hi: string) => {
+    const v = t(k);
+    return v === k ? (lang === "hi" ? hi : en) : v;
+  };
+
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ||
+    user?.emailAddresses?.[0]?.emailAddress ||
+    profileEmail;
+
+  const rememberKid = (id: string) => {
+    setKid(id);
+    try {
+      if (userId && id) localStorage.setItem(`jyotish_horoscope_kid:${userId}`, id);
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => {
-    if (mode !== "rashi") return;
-    const pl = place || DEFAULT_PLACE;
+    if (!isLoaded) return;
+    if (!isSignedIn || !userId) {
+      setSaved([]);
+      setKid("");
+      setFallbackKundli(null);
+      setPersonal(null);
+      setChart(null);
+      setProfileEmail("");
+      setKundlisLoaded(false);
+      return;
+    }
+
+    let cancelled = false;
+    setKundlisLoaded(false);
+    setErr("");
+
+    api<{ email?: string }>("/me")
+      .then((p) => { if (!cancelled && p?.email) setProfileEmail(p.email); })
+      .catch(() => {});
+
+    api<Kundli[]>("/kundlis")
+      .then(async (xs) => {
+        if (cancelled) return;
+        if (xs.length > 0) {
+          setSaved(xs);
+          setFallbackKundli(null);
+          let preferred = "";
+          try { preferred = localStorage.getItem(`jyotish_horoscope_kid:${userId}`) || ""; } catch { /* ignore */ }
+          const pick = xs.find((x) => x.id === preferred) || xs[0];
+          rememberKid(pick.id || "");
+          return;
+        }
+        let cached: Kundli | null = null;
+        try {
+          const raw = localStorage.getItem(`jyotish_last_kundli:${userId}`);
+          if (raw) cached = JSON.parse(raw);
+        } catch { /* ignore */ }
+
+        if (cached && cached.datetime_local && cached.tz) {
+          try {
+            const created = await api<Kundli>("/kundlis", cached);
+            if (cancelled) return;
+            setSaved([created]);
+            setFallbackKundli(null);
+            rememberKid(created.id || "");
+          } catch {
+            if (!cancelled) setFallbackKundli(cached);
+          }
+        } else {
+          setSaved([]);
+        }
+      })
+      .catch((e) => { if (!cancelled) setErr(e.message); })
+      .finally(() => { if (!cancelled) setKundlisLoaded(true); });
+
+    return () => { cancelled = true; };
+  }, [isLoaded, isSignedIn, userId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const activeKundli = saved.find((x) => x.id === kid) || fallbackKundli;
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !activeKundli) return;
+    let cancelled = false;
     setLoading(true);
     setErr("");
-    api("/horoscope/daily", { day, tz: pl.tz, lat: pl.lat, lon: pl.lon, lang })
-      .then(setRashiData)
-      .catch((e) => setErr(e.message))
-      .finally(() => setLoading(false));
-  }, [mode, day, place, lang]);
+    setPersonal(null);
+    setChart(null);
+    Promise.all([
+      api("/report/daily", { ...birthOf(activeKundli), lang, day, at: nowIn(activeKundli.tz) }),
+      api("/chart", birthOf(activeKundli)).catch(() => null),
+    ])
+      .then(([rep, ch]) => {
+        if (cancelled) return;
+        setPersonal(rep);
+        if (ch) setChart(ch);
+      })
+      .catch((e) => { if (!cancelled) setErr(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [isLoaded, isSignedIn, activeKundli, day, lang]);
 
-  useEffect(() => {
-    if (mode !== "kundli" || !kid) return;
-    const k = saved.find((x) => x.id === kid);
-    if (!k) return;
-    setLoading(true);
+  const saveNewKundli = async (k: Kundli) => {
     setErr("");
-    api("/report/daily", { ...birthOf(k), lang, day, at: nowIn(k.tz) })
-      .then(setPersonal)
-      .catch((e) => setErr(e.message))
-      .finally(() => setLoading(false));
-  }, [mode, kid, day, lang, saved]);
+    try {
+      const created = await api<Kundli>("/kundlis", k);
+      setSaved((prev) => [created, ...prev]);
+      setFallbackKundli(null);
+      rememberKid(created.id || "");
+      try {
+        if (userId) localStorage.setItem(`jyotish_last_kundli:${userId}`, JSON.stringify(created));
+      } catch { /* ignore */ }
+      setAdding(false);
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  };
 
-  const signs = rashiData?.signs || [];
-  const activeSign = selectedSign ? signs.find((s: any) => s.sign === selectedSign) : null;
-  const p = rashiData?.panchang;
-  const selectedKundli = saved.find((x) => x.id === kid);
+  const natal = personal?.natal || (chart ? {
+    lagna: chart.lagna?.sign,
+    lagna_sanskrit: chart.lagna?.sign_sanskrit,
+    moon_sign: chart.planets?.Moon?.sign,
+    moon_rashi_sanskrit: chart.planets?.Moon?.sign_sanskrit,
+    nakshatra: chart.planets?.Moon?.nakshatra?.name,
+    pada: chart.planets?.Moon?.nakshatra?.pada,
+  } : null);
+
+  const rashiTop = natal?.moon_sign
+    ? `${T(natal.moon_sign)}${natal.moon_rashi_sanskrit && T(natal.moon_sign) !== natal.moon_rashi_sanskrit ? ` (${natal.moon_rashi_sanskrit})` : ""}`
+    : "";
+  const lagnaTop = natal?.lagna
+    ? `${T(natal.lagna)}${natal.lagna_sanskrit && T(natal.lagna) !== natal.lagna_sanskrit ? ` (${natal.lagna_sanskrit})` : ""}`
+    : "";
+  const sunTop = chart?.planets?.Sun?.sign
+    ? `${T(chart.planets.Sun.sign)}${chart.planets.Sun.sign_sanskrit && T(chart.planets.Sun.sign) !== chart.planets.Sun.sign_sanskrit ? ` (${chart.planets.Sun.sign_sanskrit})` : ""}`
+    : "";
 
   return (
     <div className="page">
       <section className="card">
-        <h2>{t("daily_title")}</h2>
-        <p className="note">{t("daily_sub")}</p>
-
-        <div className="subtabs">
-          <button className={mode === "rashi" ? "on" : ""} onClick={() => setMode("rashi")}>{t("by_rashi")}</button>
-          <button className={mode === "kundli" ? "on" : ""} onClick={() => setMode("kundli")}>{t("by_kundli")}</button>
-        </div>
-
-        <div className="row" style={{ maxWidth: 720, marginBottom: 14 }}>
-          <div>
-            <label>{t("date")}</label>
-            <input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
-          </div>
-          {mode === "rashi" ? (
-            <div>
-              <label>{t("place")}</label>
-              <PlaceSearch value={place} onSelect={setPlace} placeholder={t("city_ph")} />
-            </div>
-          ) : (
-            <div>
-              <label>{t("choose_saved")}</label>
-              <div className="btnrow" style={{ alignItems: "center" }}>
-                <select value={kid} onChange={(e) => setKid(e.target.value)} style={{ flex: 1 }}>
-                  {!saved.length && <option value="">—</option>}
-                  {saved.map((k) => (
-                    <option key={k.id} value={k.id}>{k.name} · {k.datetime_local.slice(0, 10)}</option>
-                  ))}
-                </select>
-                {kid && <Link className="btn light" href={`/kundli/${kid}`}>{t("open_kundli_full")}</Link>}
-              </div>
-            </div>
+        <div className="kheader" style={{ marginBottom: 10 }}>
+          <h2 style={{ margin: 0 }}>{t("daily_title")}</h2>
+          {activeKundli?.name && <span className="chip gray">{activeKundli.name}</span>}
+          {rashiTop && (
+            <span className="chip" style={{ fontSize: 13.5, padding: "4px 12px" }}>
+              {lbl("janma_rashi", "Janma Rashi (Moon)", "जन्म राशि (चंद्र)")}: {rashiTop}
+            </span>
+          )}
+          {lagnaTop && (
+            <span className="chip gray">
+              {t("lagna")}: {lagnaTop}
+            </span>
+          )}
+          {sunTop && (
+            <span className="chip gray">
+              {T("Sun")}: {sunTop}
+            </span>
+          )}
+          {isLoaded && isSignedIn && userEmail && (
+            <span className="chip gray" style={{ marginLeft: "auto" }}>
+              {lbl("signed_in_as", "Signed in as", "साइन इन:")} {user?.fullName ? `${user.fullName} · ` : ""}{userEmail}
+            </span>
           )}
         </div>
 
-        {err && <p className="err" style={{ display: "block" }}>{err}</p>}
-        <EmailShareButton
-          kind={mode}
-          sign={selectedSign || "Aries"}
-          kundli={mode === "kundli" ? selectedKundli : undefined}
-          tz={(mode === "kundli" ? selectedKundli?.tz : place?.tz) || DEFAULT_PLACE.tz}
-          lat={(mode === "kundli" ? selectedKundli?.lat : place?.lat) ?? DEFAULT_PLACE.lat}
-          lon={(mode === "kundli" ? selectedKundli?.lon : place?.lon) ?? DEFAULT_PLACE.lon}
-          day={day}
-        />
-        {loading && <div className="empty">{t("loading")}</div>}
+        {!isLoaded && <div className="empty">{t("loading")}</div>}
 
-        {mode === "rashi" && !loading && rashiData && (
+        {isLoaded && !isSignedIn && (
+          <div className="empty">
+            <p style={{ marginBottom: 12 }}>
+              {lbl("sign_in_horoscope", "Sign in to view your personal daily horoscope with full details and send it to your email.", "अपना विस्तृत व्यक्तिगत दैनिक राशिफल देखने और अपने ईमेल पर भेजने के लिए साइन इन करें।")}
+            </p>
+            <Link href="/sign-in" className="btn">{lang === "hi" ? "साइन इन करें" : "Sign in"}</Link>
+          </div>
+        )}
+
+        {isLoaded && isSignedIn && !kundlisLoaded && <div className="empty">{t("loading")}</div>}
+
+        {isLoaded && isSignedIn && kundlisLoaded && (
           <>
-            <div className="summary">
-              <div className="stat"><span>{t("date")}</span><b>{fmtD(rashiData.date)}</b><span>{T(p.vara)}</span></div>
-              <div className="stat"><span>{t("transit_moon")}</span><b>{T(rashiData.moon_sign)}</b></div>
-              <div className="stat"><span>{t("tithi")}</span><b>{T(p.tithi.paksha)} {T(p.tithi.name)}</b></div>
-              <div className="stat"><span>{t("nakshatra")}</span><b>{T(p.nakshatra.name)}</b></div>
-              <div className="stat"><span>{t("rahu_kaal")}</span><b>{p.rahu_kaal.start.slice(11, 16)}–{p.rahu_kaal.end.slice(11, 16)}</b></div>
-            </div>
-
-            {(rashiData.yogas?.length > 0 || rashiData.cautions?.length > 0) && (
-              <p>
-                {rashiData.yogas?.map((y: string) => <span key={y} className="chip good">{y}</span>)}
-                {rashiData.cautions?.map((c: string) => <span key={c} className="chip bad">{c}</span>)}
-              </p>
-            )}
-
-            <div className="subtabs" style={{ marginTop: 10 }}>
-              <button className={!selectedSign ? "on" : ""} onClick={() => setSelectedSign("")}>{t("all")}</button>
-              {signs.map((s: any) => (
-                <button key={s.sign} className={selectedSign === s.sign ? "on" : ""} onClick={() => setSelectedSign(s.sign)}>
-                  {T(s.sign)}
-                </button>
-              ))}
-            </div>
-
-            {activeSign ? (
-              <RashiDetail s={activeSign} p={p} moonSign={rashiData.moon_sign} onSelectDay={setDay} onBack={() => setSelectedSign("")} />
-            ) : (
-              <div className="rem">
-                {signs.map((s: any) => (
-                  <div
-                    key={s.sign}
-                    className="box"
-                    style={{
-                      borderLeft: `4px solid var(--${rateChip(s.rating) === "good" ? "good" : rateChip(s.rating) === "mixed" ? "mixed" : "bad"})`,
-                      cursor: "pointer",
-                    }}
-                    onClick={() => setSelectedSign(s.sign)}
-                  >
-                    <div className="kheader" style={{ marginBottom: 6 }}>
-                      <h4 style={{ margin: 0 }}>{T(s.sign)}</h4>
-                      <span className={`chip ${rateChip(s.rating)}`}>{s.rating_label}</span>
-                      <span className="note">{t("lord")}: {T(s.lord)} · +{s.moon_house}</span>
-                      {s.chandrashtama && <span className="chip bad">8th</span>}
-                      {s.ghat_nakshatra && <span className="chip bad">{t("ghat_nak")}</span>}
-                    </div>
-                    <p style={{ margin: "6px 0" }}>{s.overview}</p>
-                    <ul>{s.highlights.map((h: string, i: number) => <li key={i}>{h}</li>)}</ul>
-                    <p className="note" style={{ marginTop: 6 }}>
-                      <b>{t("lucky_colour")}:</b> {s.colour} · <b>{t("lucky_numbers")}:</b> {s.lucky_numbers.join(", ")}
-                    </p>
-                    <p style={{ marginTop: 6, marginBottom: 0 }}>
-                      <span style={{ color: "var(--accent)", fontWeight: 600, fontSize: 13 }}>{t("view_details")} →</span>
-                    </p>
+            {activeKundli && (
+              <div className="row" style={{ maxWidth: 780, marginBottom: 14, alignItems: "end" }}>
+                <div>
+                  <label>{t("date")}</label>
+                  <input type="date" value={day} onChange={(e) => setDay(e.target.value)} />
+                </div>
+                <div>
+                  <label>{t("choose_saved")}</label>
+                  <div className="btnrow" style={{ alignItems: "center" }}>
+                    {saved.length > 0 ? (
+                      <select value={kid} onChange={(e) => rememberKid(e.target.value)} style={{ flex: 1 }}>
+                        {saved.map((k) => (
+                          <option key={k.id} value={k.id}>{k.name} · {k.datetime_local.slice(0, 10)}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="chip gray">{activeKundli.name} · {activeKundli.datetime_local.slice(0, 10)}</span>
+                    )}
+                    {kid && <Link className="btn light" href={`/kundli/${kid}`}>{t("open_kundli_full")}</Link>}
+                    <button type="button" className="ghost" onClick={() => setAdding((x) => !x)}>
+                      {adding ? t("cancel") : `+ ${lbl("add_kundli", "Add new birth chart", "नई कुंडली जोड़ें")}`}
+                    </button>
                   </div>
-                ))}
+                </div>
               </div>
             )}
-            <p className="note" style={{ marginTop: 14 }}>{rashiData.disclaimer}</p>
+
+            {(adding || !activeKundli) && (
+              <div className="card" style={{ marginBottom: 16 }}>
+                <h3 style={{ marginTop: 0 }}>
+                  {!activeKundli
+                    ? lbl("need_kundli_horoscope", "Save your birth details once to see your personal daily horoscope.", "अपना व्यक्तिगत दैनिक राशिफल देखने के लिए एक बार अपना जन्म विवरण सहेजें।")
+                    : lbl("add_kundli", "Add new birth chart", "नई कुंडली जोड़ें")}
+                </h3>
+                <BirthForm
+                  compact
+                  submitLabel={lbl("create_my_kundli", "Save my birth details", "मेरा जन्म विवरण सहेजें")}
+                  onSubmit={saveNewKundli}
+                  onCancel={activeKundli ? () => setAdding(false) : undefined}
+                />
+              </div>
+            )}
+
+            {err && <p className="err" style={{ display: "block" }}>{err}</p>}
+            {loading && <div className="empty">{t("loading")}</div>}
+
+            {!loading && personal && activeKundli && (
+              <div className="rep">
+                <DailyView
+                  r={personal}
+                  kundli={activeKundli}
+                  chart={chart}
+                  userEmail={userEmail}
+                  lockToUserEmail
+                  showAllDetails
+                  onSelectDay={setDay}
+                />
+              </div>
+            )}
           </>
-        )}
-
-        {mode === "kundli" && !saved.length && !loading && (
-          <div className="empty">{t("no_saved")}</div>
-        )}
-
-        {mode === "kundli" && !loading && personal && kid && (
-          <div className="rep">
-            <DailyView r={personal} onSelectDay={setDay} />
-          </div>
         )}
       </section>
     </div>
