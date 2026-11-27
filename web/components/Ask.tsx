@@ -1,7 +1,10 @@
 "use client";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Fragment, useEffect, useRef, useState } from "react";
-import { api, birthOf, nowIn, type Kundli as K } from "@/lib/api";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
+import { ApiError, api, birthOf, nowIn, type Kundli as K } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 type Item = { q: string; lang: string; at: string; r?: any; err?: string };
@@ -29,46 +32,52 @@ function Md({ text }: { text: string }) {
 
 export default function Ask({ kundli }: { kundli: K }) {
   const { t, lang } = useI18n();
-  const store = `ask:${kundli.id || kundli.datetime_local}`;
+  const { isLoaded, isSignedIn, userId } = useAuth();
+  const router = useRouter();
+  const store = `ask:${userId || "anon"}:${kundli.id || kundli.datetime_local}`;
   const [items, setItems] = useState<Item[]>([]);
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   const [st, setSt] = useState<any>(null);
   const [useAi, setUseAi] = useState(true);
-  const [key, setKey] = useState("");
-  const [model, setModel] = useState("");
-  const [showCfg, setShowCfg] = useState(false);
   const [imgs, setImgs] = useState<Record<string, number>>({});
   const top = useRef<HTMLDivElement>(null);
+  const goSignIn = () => router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname + window.location.search)}`);
 
   useEffect(() => {
     api("/books/status").then(setImgs).catch(() => {});
-    api("/ask/status").then((s) => { setSt(s); setModel(s.model); }).catch(() => {});
+    api("/ask/status").then(setSt).catch(() => {});
     try { setItems(JSON.parse(localStorage.getItem(store) || "[]")); } catch { /* storage unavailable */ }
   }, [store]);
   const persist = (x: Item[]) => { setItems(x); try { localStorage.setItem(store, JSON.stringify(x.slice(0, 30))); } catch { /* ignore */ } };
 
   const submit = async (question: string) => {
+    if (!isSignedIn) { goSignIn(); return; }
     const qq = question.trim();
     if (qq.length < 2 || busy) return;
     setBusy(true);
     const it: Item = { q: qq, lang, at: new Date().toISOString() };
     try {
       it.r = await api("/ask", { ...birthOf(kundli), lang, at: nowIn(kundli.tz), question: qq, use_ai: useAi });
-    } catch (e: any) { it.err = e.message; }
+    } catch (e: any) {
+      if (e instanceof ApiError && e.status === 401) { setBusy(false); goSignIn(); return; }
+      it.err = e.message;
+    }
     persist([it, ...items]);
     setQ(""); setBusy(false);
     top.current?.scrollIntoView({ behavior: "smooth" });
-  };
-  const saveKey = async (clear = false) => {
-    const s = await api("/ask/key", { api_key: clear ? "" : key, model: model || null });
-    setSt(s); setKey(""); if (!clear) setShowCfg(false);
   };
 
   return (
     <div className="ask">
       <h2>{t("ask_title")}</h2>
       <p className="note">{t("ask_intro")}</p>
+      {isLoaded && !isSignedIn && (
+        <div className="finding mixed noprint" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+          <span>{lang === "hi" ? "अपनी कुंडली के बारे में प्रश्न पूछने के लिए साइन इन करें।" : "Sign in to ask questions about your chart."}</span>
+          <Link href="/sign-in" className="btn">{lang === "hi" ? "साइन इन" : "Sign in"}</Link>
+        </div>
+      )}
       <div className="ask-box noprint">
         <textarea rows={3} value={q} placeholder={t("ask_placeholder")} onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) submit(q); }} />
@@ -76,24 +85,12 @@ export default function Ask({ kundli }: { kundli: K }) {
           <button onClick={() => submit(q)} disabled={busy || q.trim().length < 2}>{busy ? t("ask_thinking") : t("ask_button")}</button>
           {st?.ai && <label className="ask-toggle"><input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} /> {t("ask_use_ai")}</label>}
           <span className="note" style={{ marginLeft: "auto" }}>
-            {st ? (st.ai ? `${t("ask_ai_on")} (${st.model})` : t("ask_ai_off")) : ""}{" "}
-            <a href="#" onClick={(e) => { e.preventDefault(); setShowCfg((x) => !x); }}>{t("ask_settings")}</a>
+            {st ? (st.ai ? `${t("ask_ai_on")} (${st.model})` : t("ask_ai_off")) : ""}
           </span>
         </div>
         <div className="ask-examples">
           {(EXAMPLES[lang] || EXAMPLES.en).map((x) => <button key={x} className="chip gray" onClick={() => submit(x)} disabled={busy}>{x}</button>)}
         </div>
-        {showCfg && (
-          <div className="card" style={{ marginTop: 10 }}>
-            <p className="note">{t("ask_key_help")}</p>
-            <div className="btnrow" style={{ alignItems: "end" }}>
-              <div style={{ flex: 2 }}><label>{t("ask_key")}</label>
-                <input type="password" value={key} placeholder={st?.key_hint || "sk-ant-…"} onChange={(e) => setKey(e.target.value)} /></div>
-              <div style={{ flex: 1 }}><label>{t("ask_model")}</label><input value={model} onChange={(e) => setModel(e.target.value)} /></div>
-              <button onClick={() => saveKey()} disabled={!key.trim()}>{t("ask_save_key")}</button>
-              {st?.ai && <button className="ghost" onClick={() => saveKey(true)}>{t("ask_remove_key")}</button>}
-            </div>
-          </div>)}
       </div>
 
       <div ref={top} />
