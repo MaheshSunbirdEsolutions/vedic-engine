@@ -1,6 +1,7 @@
 """HTTP API.  Run:  uvicorn vedic_engine.api:app --reload"""
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from datetime import date, datetime
 from typing import Literal
 
@@ -11,6 +12,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from . import doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp, whatsapp as _wa
 from . import auth, doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp
 from .chart import build_chart
 from .dasha import vimshottari
@@ -18,7 +20,17 @@ from .ephemeris import Settings
 from .panchang import panchang
 from .rules import facts_from_chart, interpret
 
-app = FastAPI(title="Vedic Engine", version="1.1.0")
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    _wa.start_scheduler()
+    try:
+        yield
+    finally:
+        _wa.stop_scheduler()
+
+
+app = FastAPI(title="Vedic Engine", version="1.1.0", lifespan=_lifespan)
 
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 import os as _os  # noqa: E402
@@ -137,6 +149,7 @@ from .constants import SIGNS as _SIGNS  # noqa: E402
 class ReportIn(BirthIn):
     lang: Literal["en", "hi"] = "en"
     year: int | None = None
+    day: date | None = None
     at: datetime | None = None
 
 
@@ -316,6 +329,92 @@ def report_simple(b: ReportIn):
         months += [{**m, "label": f"{m['month']} {now.year + 1}"} for m in nm]
     months = [{k: m[k] for k in ("label", "rating", "rating_label")} for m in months[:6]]
     return _simple.summary(c, d3, iss, yr, months, r_now, r_next, b.lang, now)
+
+
+@app.post("/report/daily")
+def report_daily(b: ReportIn):
+    """Personalized daily horoscope (Chandrabala, Tarabala, daily Gochara, areas, 7-day strip)."""
+    from . import daily as _daily
+    s = b.settings.to()
+    now = (b.at or datetime.now()).replace(tzinfo=None)
+    day = b.day or now.date()
+    c = chart(b)
+    birth = _birth(b)
+    d3 = vimshottari(birth, b.tz, s, levels=3, at=datetime.combine(day, datetime.min.time()).replace(hour=12))
+    moon_sign = c["planets"]["Moon"]["sign_index"] - 1
+    ss = lambda at: doshas.sade_sati_status(moon_sign, at, b.tz, s)  # noqa: E731
+    return _daily.for_chart(c, d3, birth, b.tz, b.lat, b.lon, s, day, b.lang, ss_status=ss)
+
+
+class DailyHoroscopeIn(BaseModel):
+    day: date | None = None
+    tz: str = "Asia/Kolkata"
+    lat: float = 28.6139
+    lon: float = 77.2090
+    lang: Literal["en", "hi"] = "en"
+    settings: SettingsIn = SettingsIn()
+
+
+@app.post("/horoscope/daily")
+def horoscope_daily_post(req: DailyHoroscopeIn):
+    """12-Rashi (Moon sign) daily horoscope."""
+    from . import daily as _daily
+    day = req.day or date.today()
+    return _daily.by_signs(day, req.tz, req.lat, req.lon, req.settings.to(), req.lang)
+
+
+@app.get("/horoscope/daily")
+def horoscope_daily_get(day: date | None = None, tz: str = "Asia/Kolkata", lat: float = 28.6139,
+                        lon: float = 77.2090, lang: Literal["en", "hi"] = "en"):
+    """12-Rashi (Moon sign) daily horoscope (GET convenience endpoint)."""
+    from . import daily as _daily
+    return _daily.by_signs(day or date.today(), tz, lat, lon, Settings(), lang)
+
+
+# ---------- WhatsApp daily 7:00 AM delivery ----------
+class WhatsAppScheduleIn(BaseModel):
+    enabled: bool = True
+    phone: str = ""
+    kind: Literal["rashi", "kundli"] = "rashi"
+    sign: str = "Aries"
+    kundli_id: str = ""
+    time: str = "07:00"
+    tz: str = "Asia/Kolkata"
+    lat: float = 28.6139
+    lon: float = 77.2090
+    lang: Literal["en", "hi"] = "en"
+    provider: Literal["callmebot", "twilio", "meta", "webhook"] | None = None
+    provider_config: dict | None = None
+    day: date | None = None
+
+
+@app.get("/whatsapp/status")
+def whatsapp_status():
+    return _wa.status()
+
+
+@app.post("/whatsapp/schedule")
+def whatsapp_schedule(req: WhatsAppScheduleIn):
+    try:
+        return _wa.configure(req.model_dump(exclude={"day"}))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/whatsapp/preview")
+def whatsapp_preview(req: WhatsAppScheduleIn):
+    try:
+        return _wa.format_message(req.model_dump(), day=req.day)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/whatsapp/send-now")
+def whatsapp_send_now(req: WhatsAppScheduleIn):
+    try:
+        return _wa.send_now(override=req.model_dump(exclude={"day", "enabled"}), day=req.day)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
 @app.post("/report/tirtha")
