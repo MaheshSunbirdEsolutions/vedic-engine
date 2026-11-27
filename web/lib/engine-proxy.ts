@@ -30,14 +30,32 @@ const HOP_BY_HOP_RESPONSE_HEADERS = new Set([
 
 const NULL_BODY_STATUSES = new Set([101, 204, 205, 304]);
 
-function engineBaseUrl(): string {
-  const raw = process.env.ENGINE_URL || "https://vedic-engine-eight.vercel.app/engine";
+function engineBaseUrl(): string | null {
+  const raw = process.env.ENGINE_URL?.trim();
+  if (!raw) {
+    if (process.env.VERCEL) return null;
+    return "http://127.0.0.1:8000/";
+  }
   return raw.endsWith("/") ? raw : `${raw}/`;
 }
 
 export async function proxyToEngine(req: NextRequest, segments: string[]): Promise<Response> {
+  const base = engineBaseUrl();
+  if (!base) {
+    return NextResponse.json(
+      { detail: "ENGINE_URL is not configured on Vercel. Ensure Root Directory is '.' so vercel.json service bindings inject ENGINE_URL." },
+      { status: 502 },
+    );
+  }
   const relativePath = segments.map(encodeURIComponent).join("/");
-  const target = new URL(`${relativePath}${req.nextUrl.search}`, engineBaseUrl());
+  const target = new URL(`${relativePath}${req.nextUrl.search}`, base);
+  const basePath = new URL(base).pathname.replace(/\/+$/, "");
+  if (target.origin === req.nextUrl.origin && (basePath === "" || basePath === "/engine")) {
+    return NextResponse.json(
+      { detail: "ENGINE_URL points to the web app itself instead of the Python Vedic Engine. Remove any manual ENGINE_URL env var in Vercel so the vercel.json service binding is used." },
+      { status: 502 },
+    );
+  }
 
   const headers = new Headers();
   req.headers.forEach((value, key) => {
