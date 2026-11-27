@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .pytest_cache/
 /data/
+/vedic_engine/static/books/
 .env
 web/node_modules/
 web/.next/
