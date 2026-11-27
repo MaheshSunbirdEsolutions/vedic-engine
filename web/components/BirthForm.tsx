@@ -1,13 +1,17 @@
 "use client";
 import { useState } from "react";
-import type { Kundli, Place } from "@/lib/api";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
+import { kundliToQuery, type Kundli, type Place } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import PlaceSearch from "./PlaceSearch";
 
-export default function BirthForm({ initial, onSubmit, submitLabel, onCancel, compact }: {
-  initial?: Partial<Kundli>; onSubmit: (k: Kundli) => void; submitLabel?: string; onCancel?: () => void; compact?: boolean;
+export default function BirthForm({ initial, onSubmit, submitLabel, onCancel, compact, requireAuth }: {
+  initial?: Partial<Kundli>; onSubmit: (k: Kundli) => void; submitLabel?: string; onCancel?: () => void; compact?: boolean; requireAuth?: boolean;
 }) {
   const { t } = useI18n();
+  const { isLoaded, isSignedIn } = useAuth();
+  const router = useRouter();
   const [name, setName] = useState(initial?.name || "");
   const [gender, setGender] = useState(initial?.gender || "");
   const [dob, setDob] = useState(initial?.datetime_local?.slice(0, 10) || "");
@@ -22,18 +26,31 @@ export default function BirthForm({ initial, onSubmit, submitLabel, onCancel, co
   const [tags, setTags] = useState(initial?.tags || "");
   const [err, setErr] = useState("");
 
+  const mustSignIn = requireAuth ?? !compact;
   const choose = (p: Place) => { setPlace(p); setLat(String(p.lat)); setLon(String(p.lon)); setTz(p.tz); };
+  const buildKundli = (): Kundli => ({
+    ...(initial?.id ? { id: initial.id } : {}),
+    name: name.trim() || `${dob} ${tob.slice(0, 5)}`, gender, place: place?.name || initial?.place || "",
+    datetime_local: `${dob}T${tob.length === 5 ? tob + ":00" : tob}`, tz: tz.trim(), lat: parseFloat(lat), lon: parseFloat(lon),
+    settings: { ayanamsa: ay, node }, notes, tags,
+  });
+
   const submit = () => {
+    if (mustSignIn) {
+      if (!isLoaded) return;
+      if (!isSignedIn) {
+        const la = parseFloat(lat), lo = parseFloat(lon);
+        const hasBirth = Boolean(dob && tob && !isNaN(la) && !isNaN(lo) && tz.trim());
+        const nextUrl = hasBirth ? `/kundli/view?${kundliToQuery(buildKundli())}` : "/";
+        router.push(`/sign-in?redirect_url=${encodeURIComponent(nextUrl)}`);
+        return;
+      }
+    }
     if (!dob || !tob) return setErr(t("err_dt"));
     const la = parseFloat(lat), lo = parseFloat(lon);
     if (isNaN(la) || isNaN(lo) || !tz) return setErr(t("err_place"));
     setErr("");
-    onSubmit({
-      ...(initial?.id ? { id: initial.id } : {}),
-      name: name.trim() || `${dob} ${tob.slice(0, 5)}`, gender, place: place?.name || initial?.place || "",
-      datetime_local: `${dob}T${tob.length === 5 ? tob + ":00" : tob}`, tz: tz.trim(), lat: la, lon: lo,
-      settings: { ayanamsa: ay, node }, notes, tags,
-    });
+    onSubmit(buildKundli());
   };
 
   return (

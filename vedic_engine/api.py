@@ -1,24 +1,36 @@
 """HTTP API.  Run:  uvicorn vedic_engine.api:app --reload"""
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from datetime import date, datetime
 from typing import Literal
 
 import pathlib
 
 import geonamescache
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp
+from . import doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp, whatsapp as _wa
+from . import auth, doshas, i18n, matching, predictions as _pred, nakshatra as _nak, placements as _pl, remedies as _rem, tantra as _tantra, temples as _tmp
 from .chart import build_chart
 from .dasha import vimshottari
 from .ephemeris import Settings
 from .panchang import panchang
 from .rules import facts_from_chart, interpret
 
-app = FastAPI(title="Vedic Engine", version="1.1.0")
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI):
+    _wa.start_scheduler()
+    try:
+        yield
+    finally:
+        _wa.stop_scheduler()
+
+
+app = FastAPI(title="Vedic Engine", version="1.1.0", lifespan=_lifespan)
 
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 import os as _os  # noqa: E402
@@ -137,6 +149,7 @@ from .constants import SIGNS as _SIGNS  # noqa: E402
 class ReportIn(BirthIn):
     lang: Literal["en", "hi"] = "en"
     year: int | None = None
+    day: date | None = None
     at: datetime | None = None
 
 
@@ -318,6 +331,92 @@ def report_simple(b: ReportIn):
     return _simple.summary(c, d3, iss, yr, months, r_now, r_next, b.lang, now)
 
 
+@app.post("/report/daily")
+def report_daily(b: ReportIn):
+    """Personalized daily horoscope (Chandrabala, Tarabala, daily Gochara, areas, 7-day strip)."""
+    from . import daily as _daily
+    s = b.settings.to()
+    now = (b.at or datetime.now()).replace(tzinfo=None)
+    day = b.day or now.date()
+    c = chart(b)
+    birth = _birth(b)
+    d3 = vimshottari(birth, b.tz, s, levels=3, at=datetime.combine(day, datetime.min.time()).replace(hour=12))
+    moon_sign = c["planets"]["Moon"]["sign_index"] - 1
+    ss = lambda at: doshas.sade_sati_status(moon_sign, at, b.tz, s)  # noqa: E731
+    return _daily.for_chart(c, d3, birth, b.tz, b.lat, b.lon, s, day, b.lang, ss_status=ss)
+
+
+class DailyHoroscopeIn(BaseModel):
+    day: date | None = None
+    tz: str = "Asia/Kolkata"
+    lat: float = 28.6139
+    lon: float = 77.2090
+    lang: Literal["en", "hi"] = "en"
+    settings: SettingsIn = SettingsIn()
+
+
+@app.post("/horoscope/daily")
+def horoscope_daily_post(req: DailyHoroscopeIn):
+    """12-Rashi (Moon sign) daily horoscope."""
+    from . import daily as _daily
+    day = req.day or date.today()
+    return _daily.by_signs(day, req.tz, req.lat, req.lon, req.settings.to(), req.lang)
+
+
+@app.get("/horoscope/daily")
+def horoscope_daily_get(day: date | None = None, tz: str = "Asia/Kolkata", lat: float = 28.6139,
+                        lon: float = 77.2090, lang: Literal["en", "hi"] = "en"):
+    """12-Rashi (Moon sign) daily horoscope (GET convenience endpoint)."""
+    from . import daily as _daily
+    return _daily.by_signs(day or date.today(), tz, lat, lon, Settings(), lang)
+
+
+# ---------- WhatsApp daily 7:00 AM delivery ----------
+class WhatsAppScheduleIn(BaseModel):
+    enabled: bool = True
+    phone: str = ""
+    kind: Literal["rashi", "kundli"] = "rashi"
+    sign: str = "Aries"
+    kundli_id: str = ""
+    time: str = "07:00"
+    tz: str = "Asia/Kolkata"
+    lat: float = 28.6139
+    lon: float = 77.2090
+    lang: Literal["en", "hi"] = "en"
+    provider: Literal["callmebot", "twilio", "meta", "webhook"] | None = None
+    provider_config: dict | None = None
+    day: date | None = None
+
+
+@app.get("/whatsapp/status")
+def whatsapp_status():
+    return _wa.status()
+
+
+@app.post("/whatsapp/schedule")
+def whatsapp_schedule(req: WhatsAppScheduleIn):
+    try:
+        return _wa.configure(req.model_dump(exclude={"day"}))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/whatsapp/preview")
+def whatsapp_preview(req: WhatsAppScheduleIn):
+    try:
+        return _wa.format_message(req.model_dump(), day=req.day)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.post("/whatsapp/send-now")
+def whatsapp_send_now(req: WhatsAppScheduleIn):
+    try:
+        return _wa.send_now(override=req.model_dump(exclude={"day", "enabled"}), day=req.day)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
 @app.post("/report/tirtha")
 def report_tirtha(b: ReportIn):
     """Temples & tantra: temples ranked for this chart, the full directory, and the tantra layer."""
@@ -384,14 +483,20 @@ def ask_status():
 
 
 @app.post("/ask/key")
-def ask_key(k: AiKeyIn):
+def ask_key(k: AiKeyIn, _user: auth.AuthUser = Depends(auth.require_user)):
     """Save (or clear, with an empty key) the Anthropic API key in data/ai.json on this computer."""
+    if auth.auth_enabled():
+        raise HTTPException(
+            403,
+            "Shared AI key updates are disabled when multi-user authentication is enabled; "
+            "set ANTHROPIC_API_KEY on the server instead.",
+        )
     from . import ask as _ask
     return _ask.save_key(k.api_key, k.model)
 
 
 @app.post("/ask")
-def ask_question(b: AskIn):
+def ask_question(b: AskIn, _user: auth.AuthUser = Depends(auth.require_user)):
     from . import ask as _ask
     s = b.settings.to()
     now = (b.at or datetime.now()).replace(tzinfo=None)
@@ -412,11 +517,60 @@ def books_status():
     return {k: len(list((root / k).glob("*.jpg"))) if (root / k).exists() else 0 for k in ("lalkitab", "bhrigu")}
 
 
-# ---------- saved kundlis ----------
-from fastapi import HTTPException  # noqa: E402
+# ---------- user profile & Clerk webhook ----------
 from . import store  # noqa: E402
 
 
+class ProfileUpdateIn(BaseModel):
+    full_name: str | None = Field(default=None, max_length=120)
+    preferred_lang: Literal["en", "hi"] | None = None
+
+
+@app.get("/me")
+def me_get(user: auth.AuthUser = Depends(auth.require_user)):
+    """Return the authenticated user's profile, creating it on first visit."""
+    claims = user.claims or {}
+    return store.ensure_profile(
+        user.user_id,
+        email=claims.get("email"),
+        full_name=claims.get("name"),
+        token=user.token,
+    )
+
+
+@app.patch("/me")
+def me_update(body: ProfileUpdateIn, user: auth.AuthUser = Depends(auth.require_user)):
+    return store.update_profile(user.user_id, body.model_dump(exclude_none=True), token=user.token)
+
+
+def _clerk_primary_email(data: dict) -> str | None:
+    emails = data.get("email_addresses") or []
+    primary_id = data.get("primary_email_address_id")
+    for item in emails:
+        if item.get("id") == primary_id and item.get("email_address"):
+            return item["email_address"]
+    return emails[0].get("email_address") if emails else None
+
+
+@app.post("/webhooks/clerk")
+async def clerk_webhook(request: Request):
+    """Sync Clerk user lifecycle events (user.created / updated / deleted) into Supabase."""
+    event = await auth.verify_clerk_webhook(request)
+    etype = event.get("type")
+    data = event.get("data") or {}
+    uid = data.get("id")
+    if not uid:
+        raise HTTPException(400, "Webhook missing user id")
+
+    if etype in ("user.created", "user.updated"):
+        name = " ".join(p for p in (data.get("first_name"), data.get("last_name")) if p).strip() or None
+        store.upsert_profile_admin(uid, email=_clerk_primary_email(data), full_name=name)
+    elif etype == "user.deleted":
+        store.delete_user_data_admin(uid)
+    return {"ok": True, "type": etype}
+
+
+# ---------- saved kundlis ----------
 class KundliIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=120)
     gender: Literal["male", "female", "other", ""] | None = ""
@@ -436,45 +590,49 @@ class KundliIn(BaseModel):
 
 
 @app.get("/kundlis")
-def kundlis_list(q: str = ""):
-    return store.list_kundlis(q)
+def kundlis_list(q: str = "", user: auth.AuthUser = Depends(auth.require_user)):
+    return store.list_kundlis(q, user_id=user.user_id, token=user.token)
 
 
 @app.post("/kundlis", status_code=201)
-def kundlis_create(k: KundliIn):
-    return store.create(k.record())
+def kundlis_create(k: KundliIn, user: auth.AuthUser = Depends(auth.require_user)):
+    return store.create(k.record(), user_id=user.user_id, token=user.token)
 
 
 @app.get("/kundlis/export")
-def kundlis_export():
-    return {"format": "jyotish-lab-kundlis", "version": 1, "kundlis": store.list_kundlis(limit=100000)}
+def kundlis_export(user: auth.AuthUser = Depends(auth.require_user)):
+    return {
+        "format": "jyotish-lab-kundlis",
+        "version": 1,
+        "kundlis": store.list_kundlis(limit=100000, user_id=user.user_id, token=user.token),
+    }
 
 
 @app.post("/kundlis/import")
-def kundlis_import(payload: dict):
+def kundlis_import(payload: dict, user: auth.AuthUser = Depends(auth.require_user)):
     items = payload.get("kundlis", payload if isinstance(payload, list) else [])
-    return {"imported": store.import_many(items)}
+    return {"imported": store.import_many(items, user_id=user.user_id, token=user.token)}
 
 
 @app.get("/kundlis/{kid}")
-def kundlis_get(kid: str):
-    k = store.get(kid)
+def kundlis_get(kid: str, user: auth.AuthUser = Depends(auth.require_user)):
+    k = store.get(kid, user_id=user.user_id, token=user.token)
     if not k:
         raise HTTPException(404, "kundli not found")
     return k
 
 
 @app.put("/kundlis/{kid}")
-def kundlis_update(kid: str, k: KundliIn):
-    r = store.update(kid, k.record())
+def kundlis_update(kid: str, k: KundliIn, user: auth.AuthUser = Depends(auth.require_user)):
+    r = store.update(kid, k.record(), user_id=user.user_id, token=user.token)
     if not r:
         raise HTTPException(404, "kundli not found")
     return r
 
 
 @app.delete("/kundlis/{kid}")
-def kundlis_delete(kid: str):
-    if not store.delete(kid):
+def kundlis_delete(kid: str, user: auth.AuthUser = Depends(auth.require_user)):
+    if not store.delete(kid, user_id=user.user_id, token=user.token):
         raise HTTPException(404, "kundli not found")
     return {"deleted": kid}
 

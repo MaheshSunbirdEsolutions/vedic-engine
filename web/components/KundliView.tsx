@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, birthOf, nowIn, type Kundli as K } from "@/lib/api";
+import { useAuth } from "@clerk/nextjs";
+import { ApiError, api, birthOf, nowIn, type Kundli as K } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import BirthForm from "./BirthForm";
 import Reports from "./Reports";
@@ -13,6 +14,7 @@ const TABS = ["chart", "dasha", "interp", "sade", "reports", "ask", "raw"] as co
 
 export default function KundliView({ initial }: { initial: K }) {
   const { t, lang, fmtD } = useI18n();
+  const { isSignedIn } = useAuth();
   const router = useRouter();
   const [k, setK] = useState<K>(initial);
   const [tab, setTab] = useState<(typeof TABS)[number]>("chart");
@@ -22,6 +24,7 @@ export default function KundliView({ initial }: { initial: K }) {
   const [editing, setEditing] = useState(false);
   const [toast, setToast] = useState("");
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2200); };
+  const goSignIn = () => router.push(`/sign-in?redirect_url=${encodeURIComponent(window.location.pathname + window.location.search)}`);
 
   useEffect(() => {
     const b = birthOf(k);
@@ -34,23 +37,35 @@ export default function KundliView({ initial }: { initial: K }) {
   }, [k.datetime_local, k.tz, k.lat, k.lon, lang]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const save = async () => {
+    if (!isSignedIn) { goSignIn(); return; }
     try {
       if (k.id) {
         const r = await api<K>(`/kundlis/${k.id}`, k, "PUT"); setK(r); flash(t("saved_ok"));
       } else {
         const r = await api<K>("/kundlis", k); setK(r); flash(t("saved_ok")); router.replace(`/kundli/${r.id}`);
       }
-    } catch (e: any) { setErr(e.message); }
+    } catch (e: any) {
+      if (e instanceof ApiError && e.status === 401) goSignIn();
+      else setErr(e.message);
+    }
   };
   const del = async () => {
+    if (!isSignedIn) { goSignIn(); return; }
     if (!k.id || !confirm(t("confirm_delete"))) return;
-    await api(`/kundlis/${k.id}`, undefined, "DELETE"); router.push("/");
+    try {
+      await api(`/kundlis/${k.id}`, undefined, "DELETE"); router.push("/");
+    } catch (e: any) {
+      if (e instanceof ApiError && e.status === 401) goSignIn();
+      else setErr(e.message);
+    }
   };
   const applyEdit = async (nk: K) => {
     setEditing(false);
     const merged = { ...nk, id: k.id };
-    if (k.id) { try { setK(await api<K>(`/kundlis/${k.id}`, merged, "PUT")); flash(t("saved_ok")); } catch (e: any) { setErr(e.message); } }
-    else setK(merged);
+    if (k.id && isSignedIn) {
+      try { setK(await api<K>(`/kundlis/${k.id}`, merged, "PUT")); flash(t("saved_ok")); }
+      catch (e: any) { setErr(e.message); }
+    } else setK(merged);
   };
 
   return (

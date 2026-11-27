@@ -6,9 +6,11 @@ import { useI18n } from "@/lib/i18n";
 import { Kundli, NorthChart, SIGNS, useLabels } from "./Charts";
 import { isCurrent } from "./Tabs";
 import { BhavTable, ExpandCtx, Fold, HealthWatch, NakDoshas, PlacementCard, RemedyDays, RemedyPlan, RemedySet } from "./Explain";
+import { DailyView } from "./DailyReport";
 
 const REPORTS = [
   { key: "simple", ep: "simple", label: "rep_simple" },
+  { key: "daily", ep: "daily", label: "rep_daily" },
   { key: "lifepred", ep: "lifelong", label: "rep_life_pred" }, { key: "yearpred", ep: "yearly", label: "rep_year_pred" },
   { key: "issues", ep: "issues", label: "rep_issues" }, { key: "wrong", ep: "full", label: "rep_wrong" },
   { key: "full", ep: "full", label: "rep_full" }, { key: "life", ep: "life-areas", label: "rep_life" },
@@ -21,18 +23,19 @@ export default function Reports({ kundli, chart }: { kundli: K; chart: any }) {
   const { t, lang } = useI18n();
   const [rep, setRep] = useState("simple");
   const [year, setYear] = useState(new Date().getFullYear());
+  const [day, setDay] = useState(() => nowIn(kundli.tz).slice(0, 10));
   const [data, setData] = useState<Record<string, any>>({});
   const [err, setErr] = useState("");
   const [books, setBooks] = useState({ lalkitab: 0, bhrigu: 0 });
   const [expand, setExpand] = useState(false);
   const cur = REPORTS.find((r) => r.key === rep)!;
-  const key = `${cur.ep}|${lang}|${year}`;
+  const key = `${cur.ep}|${lang}|${rep === "daily" ? day : year}`;
 
   useEffect(() => { api("/books/status").then(setBooks).catch(() => {}); }, []);
   useEffect(() => {
     if (data[key]) return;
     setErr("");
-    api(`/report/${cur.ep}`, { ...birthOf(kundli), lang, year, at: nowIn(kundli.tz) })
+    api(`/report/${cur.ep}`, { ...birthOf(kundli), lang, year, day, at: nowIn(kundli.tz) })
       .then((d) => setData((x) => ({ ...x, [key]: d }))).catch((e) => setErr(e.message));
   }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -43,7 +46,9 @@ export default function Reports({ kundli, chart }: { kundli: K; chart: any }) {
         {REPORTS.map((r) => <button key={r.key} className={rep === r.key ? "on" : ""} onClick={() => setRep(r.key)}>{t(r.label)}</button>)}
       </div>
       <div className="noprint btnrow" style={{ marginBottom: 10, alignItems: "end" }}>
-        <div style={{ maxWidth: 140 }}><label>{t("year")}</label><input type="number" value={year} onChange={(e) => setYear(+e.target.value)} /></div>
+        {rep === "daily"
+          ? <div style={{ maxWidth: 180 }}><label>{t("date")}</label><input type="date" value={day} onChange={(e) => setDay(e.target.value)} /></div>
+          : <div style={{ maxWidth: 140 }}><label>{t("year")}</label><input type="number" value={year} onChange={(e) => setYear(+e.target.value)} /></div>}
         <button className="ghost" onClick={() => setExpand((x) => !x)}>{expand ? t("collapse_all") : t("expand_all")}</button>
         <button className="ghost" onClick={() => { setExpand(true); setTimeout(() => window.print(), 300); }}>{t("print")}</button>
       </div>
@@ -54,6 +59,7 @@ export default function Reports({ kundli, chart }: { kundli: K; chart: any }) {
         <div className="rep">
           <HeaderBlock title={t(cur.label) + (rep === "varsh" ? ` ${d.year}` : "")} kundli={kundli} chart={chart} />
           {rep === "simple" && <Simple r={d} />}
+          {rep === "daily" && <DailyView r={d} onSelectDay={setDay} />}
           {rep === "issues" && <Issues r={d} books={books} />}
           {rep === "wrong" && <Wrong r={d} />}
           {rep === "full" && <Full r={d} />}
